@@ -1,0 +1,2977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TVET Dashboard</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+      background: #f0f2f5;
+      color: #1f2328;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: #1e3a5f;
+      color: #fff;
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    header h1 { font-size: 1.2rem; font-weight: 600; letter-spacing: .3px; }
+    .hdr-year  { font-size: 0.82rem; opacity: .65; white-space: nowrap; }
+
+    .reset-btn {
+      margin-left: auto;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,.45);
+      color: #fff;
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      letter-spacing: .3px;
+      transition: background .15s;
+      white-space: nowrap;
+    }
+    .reset-btn:hover { background: rgba(255,255,255,.12); }
+
+    /* ── View toggle bar ── */
+    .view-bar {
+      background: #162e4d;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 10px 32px;
+    }
+    .view-tab {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,.28);
+      color: rgba(255,255,255,.7);
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 7px 22px;
+      border-radius: 20px;
+      cursor: pointer;
+      letter-spacing: .2px;
+      transition: background .15s, color .15s, border-color .15s;
+      white-space: nowrap;
+    }
+    .view-tab:hover { background: rgba(255,255,255,.1); color: #fff; }
+    .view-tab.active {
+      background: #fff;
+      color: #1e3a5f;
+      border-color: #fff;
+    }
+    .view-label {
+      font-size: 0.72rem;
+      color: rgba(255,255,255,.45);
+      margin: 0 8px;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+
+    /* ── Layout ── */
+    main {
+      max-width: 1100px;
+      margin: 32px auto;
+      padding: 0 24px;
+    }
+
+    .view-panel { display: none; }
+    .view-panel.active { display: block; }
+
+    .section-title {
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: #57606a;
+      margin-bottom: 14px;
+    }
+
+    /* ── Cards row ── */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 24px 20px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      border-radius: 10px 10px 0 0;
+    }
+    .card.students::before { background: #3b82d4; }
+    .card.tasks::before    { background: #7c5cd8; }
+    .card.workshop::before { background: #22a87a; }
+    .card.kpi-a::before    { background: #3b82d4; }
+    .card.kpi-b::before    { background: #22a87a; }
+    .card.kpi-c::before    { background: #e88c30; }
+    .card.kpi-d::before    { background: #7c5cd8; }
+
+    .card-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .7px;
+      color: #57606a;
+      margin-bottom: 8px;
+    }
+    .card-value {
+      font-size: 2.4rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 6px;
+      outline: none;
+    }
+    .card-value[contenteditable="true"]:focus {
+      background: #f0f6ff;
+      border-radius: 4px;
+      padding: 0 4px;
+    }
+    .card.students .card-value { color: #3b82d4; }
+    .card.tasks    .card-value { color: #7c5cd8; }
+    .card.workshop .card-value { color: #22a87a; }
+    .card.kpi-a    .card-value { color: #3b82d4; }
+    .card.kpi-b    .card-value { color: #22a87a; }
+    .card.kpi-c    .card-value { color: #e88c30; }
+    .card.kpi-d    .card-value { color: #7c5cd8; }
+
+    .card-sub {
+      font-size: 0.82rem;
+      color: #57606a;
+    }
+    .card-sub[contenteditable="true"]:focus {
+      background: #f7f8fa;
+      border-radius: 4px;
+      outline: 1px dashed #c0c7d0;
+    }
+    .edit-hint {
+      font-size: 0.72rem;
+      color: #a0aab4;
+      margin-top: 6px;
+      font-style: italic;
+    }
+
+    /* trend arrow */
+    .trend {
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+    .trend.up   { color: #15803d; }
+    .trend.down { color: #b91c1c; }
+    .trend.flat { color: #57606a; }
+
+    /* status badge */
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge.open   { background: #dcfce7; color: #15803d; }
+    .badge.full   { background: #fee2e2; color: #b91c1c; }
+    .badge.soon   { background: #fef9c3; color: #a16207; }
+
+    /* progress bar */
+    .progress-wrap { margin-top: 10px; }
+    .progress-bar {
+      height: 6px;
+      background: #e5e7eb;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width .4s ease;
+    }
+    .progress-label {
+      font-size: 0.75rem;
+      color: #57606a;
+      margin-top: 5px;
+    }
+
+    /* ── Bottom row ── */
+    .bottom {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    /* ── Checklist ── */
+    .checklist-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 24px;
+    }
+    .checklist-card h2 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #1f2328;
+    }
+    .checklist { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .checklist li {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.88rem;
+    }
+    .checklist li input[type="checkbox"] {
+      width: 17px; height: 17px;
+      accent-color: #3b82d4;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .checklist li label { cursor: pointer; line-height: 1.4; color: #1f2328; }
+    .checklist li.done label { text-decoration: line-through; color: #57606a; }
+
+    /* ── Workshop breakdown table ── */
+    .table-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 24px;
+      overflow: hidden;
+    }
+    .table-card h2 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #1f2328;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th {
+      text-align: left;
+      padding: 7px 10px;
+      background: #f7f8fa;
+      color: #57606a;
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    td {
+      padding: 9px 10px;
+      border-bottom: 1px solid #f0f2f5;
+      color: #1f2328;
+    }
+    td[contenteditable="true"]:focus {
+      background: #f0f6ff;
+      outline: 1px dashed #3b82d4;
+      border-radius: 3px;
+    }
+    tr:last-child td { border-bottom: none; }
+
+    /* ── Executive panel specific ── */
+    .exec-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+
+    .panel-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 22px 20px;
+    }
+    .panel-card h2 {
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: #1f2328;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #f0f2f5;
+    }
+
+    /* AI forecast table */
+    .forecast-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    .forecast-table th {
+      background: #f7f8fa;
+      padding: 6px 10px;
+      font-size: 0.72rem;
+      letter-spacing: .5px;
+    }
+    .forecast-table td { padding: 7px 10px; border-bottom: 1px solid #f0f2f5; }
+    .forecast-table tr:last-child td { border-bottom: none; }
+    .ai-tag {
+      display: inline-block;
+      background: #ede9fe;
+      color: #5b21b6;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: 10px;
+      letter-spacing: .4px;
+      margin-bottom: 10px;
+    }
+
+    /* ROI table */
+    .roi-row { display: flex; justify-content: space-between; align-items: center;
+               padding: 7px 0; border-bottom: 1px solid #f0f2f5; font-size: 0.84rem; }
+    .roi-row:last-child { border-bottom: none; }
+    .roi-label { color: #57606a; }
+    .roi-value { font-weight: 700; color: #1f2328; }
+    .roi-value.positive { color: #15803d; }
+    .roi-total {
+      margin-top: 12px;
+      padding: 10px 12px;
+      background: #f0fdf4;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+    .roi-total span:last-child { color: #15803d; }
+
+    /* mini spark bar */
+    .spark { display: flex; align-items: flex-end; gap: 4px; height: 48px; margin-top: 10px; }
+    .spark-bar {
+      flex: 1;
+      background: #3b82d4;
+      border-radius: 3px 3px 0 0;
+      opacity: .75;
+      min-height: 4px;
+      transition: opacity .15s;
+    }
+    .spark-bar:hover { opacity: 1; }
+    .spark-labels { display: flex; gap: 4px; margin-top: 4px; }
+    .spark-labels span { flex: 1; font-size: 0.65rem; color: #57606a; text-align: center; }
+
+    /* ── WhatsApp button ── */
+    .wa-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 8px;
+      background: #25d366;
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 4px 11px;
+      border-radius: 20px;
+      text-decoration: none;
+      letter-spacing: .2px;
+      transition: background .15s;
+      white-space: nowrap;
+    }
+    .wa-btn:hover { background: #1ebe5d; }
+    .wa-btn svg { flex-shrink: 0; }
+
+    /* toast */
+    #toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: #1e3a5f;
+      color: #fff;
+      font-size: 0.82rem;
+      padding: 10px 18px;
+      border-radius: 8px;
+      opacity: 0;
+      transition: opacity .3s;
+      pointer-events: none;
+      z-index: 999;
+    }
+    #toast.show { opacity: 1; }
+
+    /* ── KPI Ticker bar ── */
+    .kpi-ticker {
+      background: #0f2540;
+      border-bottom: 2px solid rgba(255,255,255,.1);
+      overflow: hidden;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      position: relative;
+    }
+    .kpi-ticker::before,
+    .kpi-ticker::after {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 60px;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .kpi-ticker::before { left: 0;  background: linear-gradient(to right, #0f2540, transparent); }
+    .kpi-ticker::after  { right: 0; background: linear-gradient(to left,  #0f2540, transparent); }
+    .ticker-label {
+      flex-shrink: 0;
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #fff;
+      background: #1e3a5f;
+      padding: 0 18px 0 20px;
+      white-space: nowrap;
+      z-index: 3;
+      border-right: 2px solid rgba(255,255,255,.15);
+      height: 100%;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .ticker-label::before {
+      content: '';
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #22a87a;
+      box-shadow: 0 0 6px #22a87a;
+      animation: pulse-dot 1.2s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    .ticker-track-wrap {
+      flex: 1;
+      overflow: hidden;
+      height: 100%;
+      display: flex;
+      align-items: center;
+    }
+    .ticker-track {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      white-space: nowrap;
+      will-change: transform;
+    }
+    .ticker-track.paused { animation-play-state: paused !important; }
+    @keyframes ticker-scroll {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .ticker-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 26px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: rgba(255,255,255,.8);
+      border-right: 1px solid rgba(255,255,255,.12);
+      height: 52px;
+      white-space: nowrap;
+    }
+    .ticker-item .ti-label {
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: rgba(255,255,255,.45);
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+    .ticker-item .ti-dot {
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .ti-dot.ok     { background: #22a87a; box-shadow: 0 0 7px #22a87a99; }
+    .ti-dot.warn   { background: #e88c30; box-shadow: 0 0 7px #e88c3099; }
+    .ti-dot.danger { background: #ef4444; box-shadow: 0 0 7px #ef444499; animation: pulse-dot 1s ease-in-out infinite; }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: .3; }
+    }
+    .ticker-item .ti-val { font-size: 0.88rem; font-weight: 700; }
+    .ticker-item .ti-val.ok     { color: #4ade80; }
+    .ticker-item .ti-val.warn   { color: #fbbf24; }
+    .ticker-item .ti-val.danger { color: #f87171; }
+    .ticker-item .ti-arrow { font-size: 0.72rem; opacity: .5; }
+
+    @media (max-width: 900px) {
+      .exec-row { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 700px) {
+      .cards    { grid-template-columns: 1fr; }
+      .exec-row { grid-template-columns: 1fr; }
+      .bottom   { grid-template-columns: 1fr; }
+    }
+
+    /* ── PDF export button ── */
+    .pdf-btn {
+      background: #fff;
+      color: #1e3a5f;
+      border: none;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      letter-spacing: .3px;
+      transition: background .15s;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .pdf-btn:hover { background: #e8f0fb; }
+
+    /* ── QR button ── */
+    .qr-btn {
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.45);
+      color: #fff;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      letter-spacing: .3px;
+      transition: background .15s;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .qr-btn:hover { background: rgba(255,255,255,.25); }
+
+    /* ── QR Modal ── */
+    #qr-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.55);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    #qr-overlay.open { display: flex; }
+
+    #qr-modal {
+      background: #fff;
+      border-radius: 12px;
+      padding: 28px 32px 24px;
+      text-align: center;
+      box-shadow: 0 8px 40px rgba(0,0,0,.25);
+      max-width: 320px;
+      width: 90%;
+    }
+    #qr-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+    #qr-modal-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #1f2328;
+    }
+    #qr-close {
+      background: none;
+      border: none;
+      font-size: 1.3rem;
+      color: #57606a;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0 2px;
+    }
+    #qr-close:hover { color: #1f2328; }
+    #qr-canvas {
+      display: block;
+      margin: 0 auto;
+      border: 8px solid #fff;
+      outline: 1px solid #e5e7eb;
+      border-radius: 4px;
+      image-rendering: pixelated;
+    }
+    #qr-url-label {
+      margin-top: 12px;
+      font-size: 0.72rem;
+      color: #57606a;
+      word-break: break-all;
+      line-height: 1.4;
+    }
+    #qr-hint {
+      margin-top: 8px;
+      font-size: 0.78rem;
+      color: #3b82d4;
+      font-weight: 600;
+    }
+
+    /* ── AI Lab styles ── */
+    .ailab-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+      margin-bottom: 8px;
+    }
+    .ailab-sim-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+    }
+    .ailab-card, .ailab-sim-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 18px 18px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .ailab-card-head {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .ailab-card-head.fn  { border-left: 3px solid #3b82d4; padding-left: 10px; }
+    .ailab-card-head.gen { border-left: 3px solid #7c5cd8; padding-left: 10px; }
+    .ailab-card-head.sim { border-left: 3px solid #22a87a; padding-left: 10px; }
+    .ailab-icon { font-size: 1.4rem; flex-shrink: 0; }
+    .ailab-card-title { font-size: 0.9rem; font-weight: 700; color: #1f2328; }
+    .ailab-card-sub   { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; color: #57606a; margin-top: 1px; }
+    .ailab-desc { font-size: 0.8rem; color: #57606a; line-height: 1.5; }
+    .ailab-output {
+      background: #f7f8fa;
+      border: 1px solid #e5e7eb;
+      border-radius: 7px;
+      padding: 10px 12px;
+      font-size: 0.8rem;
+      color: #57606a;
+      line-height: 1.6;
+      min-height: 56px;
+      white-space: pre-wrap;
+    }
+    .ailab-output.gen { background: #f5f0ff; border-color: #ddd6fe; color: #3b1f6e; }
+    .ailab-output.sim { background: #f0fdf4; border-color: #bbf7d0; color: #14532d; min-height: 90px; }
+    .ailab-run-btn {
+      background: #1e3a5f; color: #fff; border: none;
+      font-size: 0.78rem; font-weight: 700; padding: 7px 16px;
+      border-radius: 6px; cursor: pointer; align-self: flex-start;
+      transition: background .12s;
+    }
+    .ailab-run-btn:hover  { background: #2a5298; }
+    .ailab-run-btn.gen    { background: #7c5cd8; }
+    .ailab-run-btn.gen:hover { background: #6d4cc0; }
+    .ailab-sim-controls { display: flex; flex-direction: column; gap: 6px; }
+    .ailab-ctrl-row {
+      display: flex; align-items: center; gap: 8px; font-size: 0.8rem;
+    }
+    .ailab-ctrl-row label { width: 130px; flex-shrink: 0; color: #57606a; }
+    .ailab-ctrl-row input[type=range] { flex: 1; accent-color: #22a87a; }
+    .sim-v { width: 44px; text-align: right; font-weight: 700; color: #1f2328; flex-shrink: 0; font-size: 0.8rem; }
+
+    .ailab-result-row {
+      display: flex; justify-content: space-between; align-items: baseline;
+      padding: 3px 0; border-bottom: 1px dashed #e5e7eb; font-size: 0.8rem;
+    }
+    .ailab-result-row:last-child { border-bottom: none; }
+    .ailab-result-row .ar-l { color: #57606a; }
+    .ailab-result-row .ar-v { font-weight: 700; }
+    .ar-v.hi { color: #b91c1c; }
+    .ar-v.md { color: #a16207; }
+    .ar-v.lo { color: #15803d; }
+
+    .health-dial {
+      text-align: center; padding: 8px 0 4px;
+    }
+    .health-dial .hd-score {
+      font-size: 2.6rem; font-weight: 800; line-height: 1;
+    }
+    .health-dial .hd-grade { font-size: 0.9rem; font-weight: 700; margin-top: 2px; }
+    .health-dial .hd-bar {
+      height: 8px; background: #e5e7eb; border-radius: 99px; overflow: hidden; margin: 8px 0 4px;
+    }
+    .health-dial .hd-fill { height: 100%; border-radius: 99px; }
+
+    @media (max-width: 700px) {
+      .ailab-grid, .ailab-sim-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── AI feature styles ── */
+    .ai-narrative {
+      background: linear-gradient(135deg,#eef6ff 0%,#f5f0ff 100%);
+      border: 1px solid #c7d7f5;
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      position: relative;
+    }
+    .ai-narrative .ai-label {
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .5px; color: #5b21b6; margin-bottom: 6px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .ai-narrative p { font-size: 0.88rem; color: #1f2328; line-height: 1.65; }
+
+    .threshold-bar {
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+      padding: 14px 18px; margin-bottom: 24px;
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    }
+    .threshold-bar .tb-label {
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .5px; color: #57606a; margin-right: 4px; flex-shrink: 0;
+    }
+    .thr-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 0.75rem; font-weight: 600; padding: 4px 11px;
+      border-radius: 20px; white-space: nowrap;
+    }
+    .thr-pill.ok     { background: #dcfce7; color: #15803d; }
+    .thr-pill.warn   { background: #fef9c3; color: #a16207; }
+    .thr-pill.danger { background: #fee2e2; color: #b91c1c; }
+
+    .risk-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      padding: 2px 7px; border-radius: 10px; vertical-align: middle;
+    }
+    .risk-badge.low  { background: #dcfce7; color: #15803d; }
+    .risk-badge.med  { background: #fef9c3; color: #a16207; }
+    .risk-badge.high { background: #fee2e2; color: #b91c1c; }
+
+    .cl-predictor {
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 8px;
+      padding: 10px 14px; margin-top: 14px; font-size: 0.8rem;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .cl-predictor .cl-icon { font-size: 1.2rem; flex-shrink: 0; }
+    .cl-predictor .cl-text { color: #1f2328; line-height: 1.45; }
+    .cl-predictor .cl-badge {
+      margin-left: auto; flex-shrink: 0;
+      font-size: 0.7rem; font-weight: 700; padding: 3px 9px;
+      border-radius: 10px;
+    }
+    .cl-badge.on-track { background: #dcfce7; color: #15803d; }
+    .cl-badge.at-risk  { background: #fee2e2; color: #b91c1c; }
+
+    /* ROI simulator */
+    .roi-simulator {
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+      padding: 22px 20px; margin-top: 0;
+    }
+    .roi-simulator h2 { font-size: 0.92rem; font-weight: 600; color: #1f2328; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #f0f2f5; }
+    .roi-sim-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 0.82rem; }
+    .roi-sim-row label { width: 140px; flex-shrink: 0; color: #57606a; }
+    .roi-sim-row input[type=range] { flex: 1; accent-color: #3b82d4; }
+    .roi-sim-row .sim-val { width: 70px; text-align: right; font-weight: 700; color: #1f2328; flex-shrink: 0; }
+    .roi-sim-result {
+      margin-top: 12px; padding: 12px 14px; border-radius: 8px;
+      background: #f0fdf4; display: flex; justify-content: space-between; align-items: center;
+    }
+    .roi-sim-result .rsr-label { font-size: 0.8rem; color: #57606a; }
+    .roi-sim-result .rsr-val   { font-size: 1.4rem; font-weight: 700; color: #15803d; }
+    .roi-sim-note { font-size: 0.75rem; color: #57606a; margin-top: 8px; line-height: 1.5; }
+
+    /* Anomaly panel */
+    .anomaly-panel {
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+      padding: 22px 20px; margin-top: 24px;
+    }
+    .anomaly-panel h2 { font-size: 0.92rem; font-weight: 600; color: #1f2328; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #f0f2f5; }
+    .anomaly-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid #f0f2f5; font-size: 0.82rem; }
+    .anomaly-row:last-child { border-bottom: none; }
+    .anomaly-row .ar-name { color: #1f2328; font-weight: 500; }
+    .anomaly-row .ar-vals { color: #57606a; font-size: 0.77rem; }
+    .anomaly-badge { font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+    .anomaly-badge.normal  { background: #f0f2f5; color: #57606a; }
+    .anomaly-badge.anomaly { background: #fee2e2; color: #b91c1c; }
+    .anomaly-badge.new     { background: #fef9c3; color: #a16207; }
+
+    /* ── Chatbot FAB ── */
+    #chat-fab {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: #1e3a5f;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(0,0,0,.25);
+      z-index: 1100;
+      transition: background .15s, transform .15s;
+      user-select: none;
+    }
+    #chat-fab:hover { background: #2a5298; transform: scale(1.07); }
+    #chat-badge {
+      position: absolute;
+      top: 4px; right: 4px;
+      width: 16px; height: 16px;
+      background: #ef4444;
+      color: #fff;
+      border-radius: 50%;
+      font-size: 0.6rem;
+      font-weight: 700;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    /* ── Chat window ── */
+    #chat-window {
+      position: fixed;
+      bottom: 90px;
+      right: 28px;
+      width: 340px;
+      max-height: 520px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      box-shadow: 0 8px 36px rgba(0,0,0,.18);
+      display: none;
+      flex-direction: column;
+      z-index: 1100;
+      overflow: hidden;
+    }
+    #chat-window.open { display: flex; }
+
+    #chat-head {
+      background: #1e3a5f;
+      color: #fff;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    #chat-head-info { display: flex; align-items: center; gap: 10px; }
+    #chat-avatar {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; font-weight: 700;
+    }
+    #chat-name  { font-size: 0.88rem; font-weight: 700; }
+    #chat-status { font-size: 0.72rem; opacity: .65; }
+    #chat-close-btn {
+      background: none; border: none; color: #fff;
+      font-size: 1.3rem; cursor: pointer; padding: 0 2px; line-height: 1;
+      opacity: .7;
+    }
+    #chat-close-btn:hover { opacity: 1; }
+
+    #chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 12px 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .chat-msg {
+      max-width: 82%;
+      padding: 8px 12px;
+      border-radius: 14px;
+      font-size: 0.82rem;
+      line-height: 1.45;
+      word-break: break-word;
+    }
+    .chat-msg.bot {
+      background: #f0f2f5;
+      color: #1f2328;
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+    .chat-msg.user {
+      background: #1e3a5f;
+      color: #fff;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    #chat-suggestions {
+      padding: 4px 10px 6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .chat-sugg {
+      background: #eef2ff;
+      color: #1e3a5f;
+      border: 1px solid #c7d7f5;
+      border-radius: 20px;
+      font-size: 0.73rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      cursor: pointer;
+      transition: background .12s;
+      text-align: left;
+    }
+    .chat-sugg:hover { background: #dce8ff; }
+
+    #chat-input-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 10px;
+      border-top: 1px solid #f0f2f5;
+      flex-shrink: 0;
+    }
+    #chat-input {
+      flex: 1;
+      border: 1px solid #e5e7eb;
+      border-radius: 20px;
+      padding: 7px 14px;
+      font-size: 0.82rem;
+      font-family: inherit;
+      outline: none;
+      color: #1f2328;
+    }
+    #chat-input:focus { border-color: #3b82d4; }
+    #chat-send-btn {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: #1e3a5f;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background .12s;
+    }
+    #chat-send-btn:hover { background: #2a5298; }
+
+    /* ── Print layout ── */
+    #print-report { display: none; }
+
+    @media print {
+      /* hide everything except the report */
+      body > *:not(#print-report) { display: none !important; }
+      #print-report {
+        display: block !important;
+        font-family: "Times New Roman", Times, serif;
+        color: #000;
+        font-size: 11pt;
+        line-height: 1.5;
+        padding: 0;
+        margin: 0;
+      }
+
+      /* Official letterhead */
+      .rpt-header {
+        text-align: center;
+        border-bottom: 2.5px solid #000;
+        padding-bottom: 12px;
+        margin-bottom: 20px;
+      }
+      .rpt-header .rpt-logo-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        margin-bottom: 6px;
+      }
+      .rpt-header .rpt-logo {
+        width: 52px; height: 52px;
+        border: 2px solid #1e3a5f;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 18pt; font-weight: 700; color: #1e3a5f;
+        flex-shrink: 0;
+      }
+      .rpt-header .rpt-org { text-align: left; }
+      .rpt-header .rpt-org h1 { font-size: 14pt; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+      .rpt-header .rpt-org p  { font-size: 9pt; color: #333; margin-top: 2px; }
+      .rpt-title {
+        font-size: 13pt; font-weight: 700; text-transform: uppercase;
+        letter-spacing: .8px; margin: 8px 0 4px;
+      }
+      .rpt-meta { font-size: 9pt; color: #333; }
+
+      /* Section headings */
+      .rpt-section { margin-top: 22px; }
+      .rpt-section-title {
+        font-size: 10pt; font-weight: 700; text-transform: uppercase;
+        letter-spacing: .6px; border-bottom: 1px solid #555;
+        padding-bottom: 3px; margin-bottom: 10px;
+      }
+
+      /* KPI grid */
+      .rpt-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin-bottom: 6px;
+      }
+      .rpt-kpi {
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 8px 10px;
+      }
+      .rpt-kpi-label { font-size: 8pt; text-transform: uppercase; letter-spacing: .5px; color: #555; }
+      .rpt-kpi-val   { font-size: 18pt; font-weight: 700; margin: 2px 0; }
+      .rpt-kpi-sub   { font-size: 8pt; color: #333; }
+
+      /* Tables */
+      .rpt-table { width: 100%; border-collapse: collapse; font-size: 10pt; margin-top: 6px; }
+      .rpt-table th {
+        background: #f0f0f0; text-align: left;
+        padding: 5px 8px; border: 1px solid #999;
+        font-size: 9pt; text-transform: uppercase; letter-spacing: .4px;
+      }
+      .rpt-table td { padding: 5px 8px; border: 1px solid #ccc; }
+      .rpt-table tr:nth-child(even) td { background: #fafafa; }
+
+      /* Checklist */
+      .rpt-checklist { list-style: none; padding: 0; columns: 2; gap: 16px; font-size: 10pt; }
+      .rpt-checklist li { padding: 3px 0; break-inside: avoid; }
+      .rpt-checklist li::before { content: ""; margin-right: 8px; }
+      .rpt-checklist li.done::before { content: "☑"; }
+      .rpt-checklist li:not(.done)::before { content: "☐"; }
+
+      /* ROI */
+      .rpt-roi { width: 60%; font-size: 10pt; }
+      .rpt-roi-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dashed #ccc; }
+      .rpt-roi-total { display: flex; justify-content: space-between; padding: 6px 0; font-weight: 700; border-top: 2px solid #000; margin-top: 4px; }
+
+      /* Signature box */
+      .rpt-sig {
+        margin-top: 40px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+      }
+      .rpt-sig-box { border-top: 1.5px solid #000; padding-top: 6px; }
+      .rpt-sig-line { font-size: 9pt; color: #333; margin-top: 2px; }
+
+      /* Footer */
+      .rpt-footer {
+        margin-top: 32px;
+        border-top: 1px solid #999;
+        padding-top: 6px;
+        font-size: 8pt;
+        color: #555;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      @page {
+        size: A4 portrait;
+        margin: 18mm 20mm 18mm 20mm;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>TVET Dashboard</h1>
+    <span class="hdr-year">Academic Year 2024 / 2025</span>
+    <button class="pdf-btn" id="pdfBtn" title="Export Official PDF">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Export Official PDF
+    </button>
+    <button class="qr-btn" id="qrBtn" title="Share QR Code">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="5" y="5" width="3" height="3"/><rect x="16" y="5" width="3" height="3"/><rect x="5" y="16" width="3" height="3"/><path d="M14 14h3v3h-3z"/><path d="M17 17h4"/><path d="M17 21v-4"/><path d="M21 14v3"/></svg>
+      Share QR
+    </button>
+    <button class="reset-btn" id="resetBtn">Reset Demo Data</button>
+  </header>
+
+  <!-- ── View Switcher ── -->
+  <div class="view-bar">
+    <span class="view-label">View</span>
+    <button class="view-tab active" data-view="exec">&#9673;&nbsp; Pengarah (Executive)</button>
+    <button class="view-tab"        data-view="ops"> &#9776;&nbsp; Operasi (Operations)</button>
+    <button class="view-tab"        data-view="ai">  &#10024;&nbsp; Makmal AI (AI Lab)</button>
+  </div>
+
+  <!-- ── KPI Ticker Bar ── -->
+  <div class="kpi-ticker" id="kpi-ticker">
+    <span class="ticker-label">KPI LIVE</span>
+    <div class="ticker-track-wrap">
+      <div class="ticker-track" id="ticker-track"></div>
+    </div>
+  </div>
+
+  <main>
+
+    <!-- ════════════════════════════════════════
+         EXECUTIVE / PENGARAH VIEW
+    ═════════════════════════════════════════ -->
+    <div class="view-panel active" id="panel-exec">
+
+      <!-- AI Narrative -->
+      <div class="ai-narrative" id="ai-narrative">
+        <div class="ai-label">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="#5b21b6"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          AI INSIGHT
+        </div>
+        <p id="ai-narrative-text">Generating insight…</p>
+      </div>
+
+      <!-- Live Threshold Alert Bar -->
+      <div class="threshold-bar" id="threshold-bar">
+        <span class="tb-label">Live KPI Status</span>
+        <span class="thr-pill" id="thr-enrolment">Enrolment —</span>
+        <span class="thr-pill" id="thr-passrate">Pass Rate —</span>
+        <span class="thr-pill" id="thr-utilisation">Trainer Util. —</span>
+        <span class="thr-pill" id="thr-workshop">Workshop —</span>
+      </div>
+
+      <!-- KPI cards row -->
+      <p class="section-title">Key Performance Indicators</p>
+      <div class="exec-row">
+
+        <div class="card kpi-a">
+          <div class="card-label">Student Enrolment</div>
+          <div class="card-value">348</div>
+          <div class="card-sub">of 400 seats filled</div>
+          <div class="trend up">▲ +12% vs last semester</div>
+        </div>
+
+        <div class="card kpi-b">
+          <div class="card-label">Competency Pass Rate</div>
+          <div class="card-value">82<span style="font-size:1.4rem;">%</span></div>
+          <div class="card-sub">Across all programmes</div>
+          <div class="trend up">▲ +4 pts vs last term</div>
+        </div>
+
+        <div class="card kpi-c">
+          <div class="card-label">Trainer Utilisation</div>
+          <div class="card-value">76<span style="font-size:1.4rem;">%</span></div>
+          <div class="card-sub">Contact hours delivered</div>
+          <div class="trend down">▼ −2 pts — review needed</div>
+        </div>
+
+        <div class="card kpi-d">
+          <div class="card-label">Workshop Uptime</div>
+          <div class="card-value">75<span style="font-size:1.4rem;">%</span></div>
+          <div class="card-sub">6 of 8 operational</div>
+          <div class="trend flat">→ Stable</div>
+        </div>
+
+      </div>
+
+      <!-- Bottom exec row -->
+      <p class="section-title">Insights &amp; Summary</p>
+      <div class="bottom" style="grid-template-columns:1fr 1fr 1fr; gap:20px;">
+
+        <!-- AI Forecast -->
+        <div class="panel-card">
+          <div class="ai-tag">AI FORECAST</div>
+          <h2>Next-Semester Enrolment</h2>
+          <div style="font-size:0.82rem;color:#57606a;margin-bottom:6px;">Projected intake based on current trend</div>
+          <div style="font-size:2rem;font-weight:700;color:#3b82d4;">372</div>
+          <div style="font-size:0.78rem;color:#57606a;margin-bottom:10px;">students &nbsp;·&nbsp; confidence: <strong>High</strong></div>
+          <div class="spark" id="spark-bars"></div>
+          <div class="spark-labels" id="spark-labels"></div>
+          <table class="forecast-table" style="margin-top:14px;">
+            <thead>
+              <tr><th>Programme</th><th>Now</th><th>Forecast</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Electrical</td><td>28</td><td>31 ▲</td></tr>
+              <tr><td>Automotive</td><td>25</td><td>26 ▲</td></tr>
+              <tr><td>Welding</td>   <td>17</td><td>20 ▲</td></tr>
+              <tr><td>Networking</td><td>24</td><td>24 →</td></tr>
+              <tr><td>Air-Cond</td>  <td>19</td><td>21 ▲</td></tr>
+              <tr><td>Plumbing</td>  <td>0</td> <td>18 ▲</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ROI Summary -->
+        <div class="panel-card">
+          <h2>ROI Summary</h2>
+          <div class="roi-row"><span class="roi-label">Training Grant (JPK)</span>   <span class="roi-value positive">RM 420,000</span></div>
+          <div class="roi-row"><span class="roi-label">Industry Contribution</span>  <span class="roi-value positive">RM 85,000</span></div>
+          <div class="roi-row"><span class="roi-label">Student Fees</span>            <span class="roi-value positive">RM 174,000</span></div>
+          <div class="roi-row"><span class="roi-label">Operating Costs</span>         <span class="roi-value" style="color:#b91c1c;">−RM 398,000</span></div>
+          <div class="roi-row"><span class="roi-label">Maintenance Costs</span>       <span class="roi-value" style="color:#b91c1c;">−RM 62,000</span></div>
+          <div class="roi-total">
+            <span>Net Surplus</span>
+            <span>RM 219,000</span>
+          </div>
+          <div style="margin-top:12px;font-size:0.78rem;color:#57606a;line-height:1.6;">
+            Return ratio: <strong style="color:#15803d;">1.55×</strong> &nbsp;·&nbsp;
+            Cost per student: <strong>RM 1,323</strong><br>
+            Industry funding up <strong>+18%</strong> YoY.
+          </div>
+        </div>
+
+        <!-- Strategic Alerts -->
+        <div class="panel-card">
+          <h2>Strategic Alerts</h2>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+
+            <div style="padding:10px 12px;background:#fff7ed;border-left:3px solid #e88c30;border-radius:4px;font-size:0.82rem;">
+              <strong>⚠ Trainer Gap</strong><br>
+              <span style="color:#57606a;">Plumbing workshop has no assigned trainer. Re-opening target: Feb 2025.</span><br>
+              <a class="wa-btn" href="#" data-wa="TVET Alert%20%F0%9F%9F%A0 Trainer Gap%0APlumbing workshop has no assigned trainer. Re-opening target: Feb 2025.%0AAction required by HOD Facilities.">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.105.546 4.082 1.5 5.797L0 24l6.389-1.676A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.89 0-3.663-.5-5.197-1.373l-.373-.22-3.797.996.995-3.69-.242-.386A9.944 9.944 0 012 12C2 6.478 6.478 2 12 2s10 4.478 10 10-4.478 10-10 10z"/></svg>
+                WhatsApp Alert
+              </a>
+            </div>
+
+            <div style="padding:10px 12px;background:#fef2f2;border-left:3px solid #ef4444;border-radius:4px;font-size:0.82rem;">
+              <strong>🔴 Utilisation Below KPI</strong><br>
+              <span style="color:#57606a;">Trainer utilisation at 76% vs 80% target. Review timetable allocation.</span><br>
+              <a class="wa-btn" href="#" data-wa="TVET Alert%20%F0%9F%94%B4 Utilisation Below KPI%0ATrainer utilisation at 76%25 vs 80%25 target. Review timetable allocation.%0APlease action by end of week.">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.105.546 4.082 1.5 5.797L0 24l6.389-1.676A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.89 0-3.663-.5-5.197-1.373l-.373-.22-3.797.996.995-3.69-.242-.386A9.944 9.944 0 012 12C2 6.478 6.478 2 12 2s10 4.478 10 10-4.478 10-10 10z"/></svg>
+                WhatsApp Alert
+              </a>
+            </div>
+
+            <div style="padding:10px 12px;background:#f0fdf4;border-left:3px solid #22a87a;border-radius:4px;font-size:0.82rem;">
+              <strong>✅ Pass Rate Improving</strong><br>
+              <span style="color:#57606a;">Competency pass rate up 4 pts. Intervention programme showing results.</span>
+            </div>
+
+            <div style="padding:10px 12px;background:#ede9fe;border-left:3px solid #7c5cd8;border-radius:4px;font-size:0.82rem;">
+              <strong>📋 Industry MoU Due</strong><br>
+              <span style="color:#57606a;">3 industry partnership MoUs expire in Q1 2025. Renewal action required.</span><br>
+              <a class="wa-btn" href="#" data-wa="TVET Alert%20%F0%9F%93%8B Industry MoU Due%0A3 industry partnership MoUs expire in Q1 2025. Renewal action required.%0APlease coordinate with Industry Liaison unit.">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.105.546 4.082 1.5 5.797L0 24l6.389-1.676A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.89 0-3.663-.5-5.197-1.373l-.373-.22-3.797.996.995-3.69-.242-.386A9.944 9.944 0 012 12C2 6.478 6.478 2 12 2s10 4.478 10 10-4.478 10-10 10z"/></svg>
+                WhatsApp Alert
+              </a>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- AI Anomaly Detection -->
+      <div class="anomaly-panel">
+        <h2>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#e88c30" stroke-width="2.2" style="vertical-align:middle;margin-right:5px"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Anomaly Detection
+        </h2>
+        <div id="anomaly-rows">Calculating…</div>
+      </div>
+
+    </div><!-- /panel-exec -->
+
+
+    <!-- ════════════════════════════════════════
+         OPERATIONS VIEW
+    ═════════════════════════════════════════ -->
+    <div class="view-panel" id="panel-ops">
+
+      <!-- Summary Cards -->
+      <p class="section-title">Overview</p>
+      <div class="cards">
+
+        <!-- Students -->
+        <div class="card students">
+          <div class="card-label">Students</div>
+          <div class="card-value" id="val-students" contenteditable="true" spellcheck="false">348</div>
+          <div class="card-sub" id="sub-students" contenteditable="true" spellcheck="false">Enrolled this semester</div>
+          <div class="progress-wrap">
+            <div class="progress-bar">
+              <div class="progress-fill" id="fill-students" style="background:#3b82d4;"></div>
+            </div>
+            <div class="progress-label" id="label-students"></div>
+          </div>
+          <div class="edit-hint">Click value to edit</div>
+        </div>
+
+        <!-- Tasks -->
+        <div class="card tasks">
+          <div class="card-label">Tasks</div>
+          <div class="card-value" id="val-tasks" contenteditable="true" spellcheck="false">24</div>
+          <div class="card-sub" id="sub-tasks" contenteditable="true" spellcheck="false">Active assignments</div>
+          <div class="progress-wrap">
+            <div class="progress-bar">
+              <div class="progress-fill" id="fill-tasks" style="background:#7c5cd8;"></div>
+            </div>
+            <div class="progress-label" id="label-tasks"></div>
+          </div>
+          <div class="edit-hint">Click value to edit</div>
+        </div>
+
+        <!-- Workshop Status -->
+        <div class="card workshop">
+          <div class="card-label">Workshop Status</div>
+          <div class="card-value" id="val-workshop">
+            <span id="ws-open-count">6</span>
+            <span style="font-size:1rem;font-weight:500;color:#374151;">/ <span id="ws-total-count">8</span></span>
+          </div>
+          <div class="card-sub" style="margin-bottom:10px;">Workshops operational</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;" id="ws-badges"></div>
+        </div>
+
+      </div>
+
+      <!-- Details -->
+      <p class="section-title">Details</p>
+      <div class="bottom">
+
+        <!-- Checklist -->
+        <div class="checklist-card">
+          <h2>End-of-Term Checklist</h2>
+          <ul class="checklist" id="checklist"></ul>
+          <div class="cl-predictor" id="cl-predictor">
+            <span class="cl-icon">📋</span>
+            <span class="cl-text" id="cl-predictor-text">Analysing…</span>
+            <span class="cl-badge" id="cl-predictor-badge"></span>
+          </div>
+        </div>
+
+        <!-- Workshop Breakdown Table -->
+        <div class="table-card">
+          <h2>Workshop Breakdown</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Workshop</th>
+                <th>Capacity</th>
+                <th>Enrolled</th>
+                <th>Risk</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="workshop-tbody"></tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <!-- ROI Scenario Simulator -->
+      <p class="section-title" style="margin-top:28px;">AI Scenario Simulator</p>
+      <div class="roi-simulator">
+        <h2>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3b82d4" stroke-width="2.2" style="vertical-align:middle;margin-right:5px"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          ROI What-If Simulator
+        </h2>
+        <div class="roi-sim-row">
+          <label for="sim-students">Students enrolled</label>
+          <input type="range" id="sim-students" min="100" max="400" value="348" step="1"/>
+          <span class="sim-val" id="sim-students-val">348</span>
+        </div>
+        <div class="roi-sim-row">
+          <label for="sim-grant">JPK Grant (RM k)</label>
+          <input type="range" id="sim-grant" min="200" max="700" value="420" step="10"/>
+          <span class="sim-val" id="sim-grant-val">RM 420k</span>
+        </div>
+        <div class="roi-sim-row">
+          <label for="sim-costs">Operating Costs (RM k)</label>
+          <input type="range" id="sim-costs" min="200" max="600" value="398" step="10"/>
+          <span class="sim-val" id="sim-costs-val">RM 398k</span>
+        </div>
+        <div class="roi-sim-result">
+          <span class="rsr-label">Projected Net Surplus</span>
+          <span class="rsr-val" id="sim-surplus">RM 219,000</span>
+        </div>
+        <div class="roi-sim-note" id="sim-note">Adjust sliders to model different scenarios. Student fees = RM 500 × enrolled.</div>
+      </div>
+
+    </div><!-- /panel-ops -->
+
+
+    <!-- ════════════════════════════════════════
+         AI LAB VIEW
+    ═════════════════════════════════════════ -->
+    <div class="view-panel" id="panel-ai">
+
+      <!-- ── Section: AI Functions ── -->
+      <p class="section-title">AI Functions — Smart Analysis</p>
+      <div class="ailab-grid">
+
+        <!-- AI Function 1: Dropout Risk Predictor -->
+        <div class="ailab-card">
+          <div class="ailab-card-head fn">
+            <span class="ailab-icon">🎯</span>
+            <div><div class="ailab-card-title">Dropout Risk Predictor</div><div class="ailab-card-sub">AI Function</div></div>
+          </div>
+          <p class="ailab-desc">Scores each workshop's dropout risk based on fill rate, status, and historical patterns. Highlights high-risk programmes needing intervention.</p>
+          <div id="dropout-output" class="ailab-output">Click Run to analyse</div>
+          <button class="ailab-run-btn" data-fn="dropout">▶ Run Analysis</button>
+        </div>
+
+        <!-- AI Function 2: Trainer Load Balancer -->
+        <div class="ailab-card">
+          <div class="ailab-card-head fn">
+            <span class="ailab-icon">⚖️</span>
+            <div><div class="ailab-card-title">Trainer Load Balancer</div><div class="ailab-card-sub">AI Function</div></div>
+          </div>
+          <p class="ailab-desc">Analyses enrolment across workshops and recommends how to redistribute trainer hours to bring utilisation above the 80% KPI target.</p>
+          <div id="trainer-output" class="ailab-output">Click Run to analyse</div>
+          <button class="ailab-run-btn" data-fn="trainer">▶ Run Analysis</button>
+        </div>
+
+        <!-- AI Function 3: Capacity Gap Finder -->
+        <div class="ailab-card">
+          <div class="ailab-card-head fn">
+            <span class="ailab-icon">🔍</span>
+            <div><div class="ailab-card-title">Capacity Gap Finder</div><div class="ailab-card-sub">AI Function</div></div>
+          </div>
+          <p class="ailab-desc">Identifies which workshops have the most unused seats and estimates the revenue opportunity if filled to 95% capacity.</p>
+          <div id="capgap-output" class="ailab-output">Click Run to analyse</div>
+          <button class="ailab-run-btn" data-fn="capgap">▶ Run Analysis</button>
+        </div>
+
+        <!-- AI Function 4: KPI Health Score -->
+        <div class="ailab-card">
+          <div class="ailab-card-head fn">
+            <span class="ailab-icon">💡</span>
+            <div><div class="ailab-card-title">KPI Health Score</div><div class="ailab-card-sub">AI Function</div></div>
+          </div>
+          <p class="ailab-desc">Computes a single composite health score (0–100) from all KPIs with weighted scoring, grading the institution's overall performance.</p>
+          <div id="health-output" class="ailab-output">Click Run to analyse</div>
+          <button class="ailab-run-btn" data-fn="health">▶ Run Analysis</button>
+        </div>
+
+      </div><!-- /ailab-grid fn -->
+
+      <!-- ── Section: AI Generators ── -->
+      <p class="section-title" style="margin-top:28px;">AI Generators — Auto-Create Content</p>
+      <div class="ailab-grid">
+
+        <!-- Generator 1: Pengarah Report Paragraph -->
+        <div class="ailab-card">
+          <div class="ailab-card-head gen">
+            <span class="ailab-icon">📝</span>
+            <div><div class="ailab-card-title">Pengarah Report Paragraph</div><div class="ailab-card-sub">AI Generator</div></div>
+          </div>
+          <p class="ailab-desc">Generates a formal executive paragraph in Bahasa Malaysia suitable for a Pengarah's monthly report, derived from live dashboard data.</p>
+          <div id="bm-report-output" class="ailab-output gen">Click Generate</div>
+          <button class="ailab-run-btn gen" data-fn="bmreport">✨ Generate</button>
+        </div>
+
+        <!-- Generator 2: Action Plan Generator -->
+        <div class="ailab-card">
+          <div class="ailab-card-head gen">
+            <span class="ailab-icon">📋</span>
+            <div><div class="ailab-card-title">Action Plan Generator</div><div class="ailab-card-sub">AI Generator</div></div>
+          </div>
+          <p class="ailab-desc">Produces a prioritised 5-point action plan based on current KPI gaps, flagged alerts, and pending checklist items.</p>
+          <div id="actionplan-output" class="ailab-output gen">Click Generate</div>
+          <button class="ailab-run-btn gen" data-fn="actionplan">✨ Generate</button>
+        </div>
+
+        <!-- Generator 3: WhatsApp Broadcast Draft -->
+        <div class="ailab-card">
+          <div class="ailab-card-head gen">
+            <span class="ailab-icon">💬</span>
+            <div><div class="ailab-card-title">WhatsApp Broadcast Draft</div><div class="ailab-card-sub">AI Generator</div></div>
+          </div>
+          <p class="ailab-desc">Auto-composes a ready-to-send WhatsApp broadcast message summarising this week's dashboard highlights for the management group chat.</p>
+          <div id="wabroadcast-output" class="ailab-output gen">Click Generate</div>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+            <button class="ailab-run-btn gen" data-fn="wabroadcast">✨ Generate</button>
+            <a id="wabroadcast-send" class="wa-btn" href="#" target="_blank" rel="noopener" style="display:none;padding:7px 14px;">Send via WhatsApp</a>
+          </div>
+        </div>
+
+        <!-- Generator 4: Next-Semester Intake Target Setter -->
+        <div class="ailab-card">
+          <div class="ailab-card-head gen">
+            <span class="ailab-icon">🎯</span>
+            <div><div class="ailab-card-title">Intake Target Setter</div><div class="ailab-card-sub">AI Generator</div></div>
+          </div>
+          <p class="ailab-desc">Generates smart intake targets per programme for next semester, factoring in current fill rates, AI forecast, and available capacity.</p>
+          <div id="targets-output" class="ailab-output gen">Click Generate</div>
+          <button class="ailab-run-btn gen" data-fn="targets">✨ Generate</button>
+        </div>
+
+      </div><!-- /ailab-grid gen -->
+
+      <!-- ── Section: AI Simulators ── -->
+      <p class="section-title" style="margin-top:28px;">AI Simulators — Model Scenarios</p>
+      <div class="ailab-sim-grid">
+
+        <!-- Simulator 1: Enrolment Growth Simulator -->
+        <div class="ailab-sim-card">
+          <div class="ailab-card-head sim">
+            <span class="ailab-icon">📈</span>
+            <div><div class="ailab-card-title">Enrolment Growth Simulator</div><div class="ailab-card-sub">AI Simulator</div></div>
+          </div>
+          <p class="ailab-desc">Project total enrolment over 4 future semesters under three growth scenarios: Conservative, Moderate, and Optimistic.</p>
+          <div class="ailab-sim-controls">
+            <div class="ailab-ctrl-row"><label>Growth rate / sem</label>
+              <input type="range" id="sim-growth" min="1" max="15" value="6" step="1"/>
+              <span id="sim-growth-val" class="sim-v">6%</span></div>
+          </div>
+          <div id="growth-output" class="ailab-output sim"></div>
+        </div>
+
+        <!-- Simulator 2: Pass Rate Intervention Simulator -->
+        <div class="ailab-sim-card">
+          <div class="ailab-card-head sim">
+            <span class="ailab-icon">📊</span>
+            <div><div class="ailab-card-title">Pass Rate Intervention</div><div class="ailab-card-sub">AI Simulator</div></div>
+          </div>
+          <p class="ailab-desc">Model how many additional students pass if you introduce targeted interventions (remedial classes, industry mentorship, etc.).</p>
+          <div class="ailab-sim-controls">
+            <div class="ailab-ctrl-row"><label>Intervention lift</label>
+              <input type="range" id="sim-lift" min="1" max="15" value="5" step="1"/>
+              <span id="sim-lift-val" class="sim-v">+5%</span></div>
+          </div>
+          <div id="passrate-output" class="ailab-output sim"></div>
+        </div>
+
+        <!-- Simulator 3: Budget Stress Test -->
+        <div class="ailab-sim-card">
+          <div class="ailab-card-head sim">
+            <span class="ailab-icon">💰</span>
+            <div><div class="ailab-card-title">Budget Stress Test</div><div class="ailab-card-sub">AI Simulator</div></div>
+          </div>
+          <p class="ailab-desc">Simulate a grant cut scenario. See the surplus / deficit at 75%, 50%, and 25% of the current JPK grant, and the minimum enrolment to stay solvent.</p>
+          <div class="ailab-sim-controls">
+            <div class="ailab-ctrl-row"><label>Grant cut</label>
+              <input type="range" id="sim-grantcut" min="0" max="75" value="25" step="5"/>
+              <span id="sim-grantcut-val" class="sim-v">−25%</span></div>
+          </div>
+          <div id="budget-output" class="ailab-output sim"></div>
+        </div>
+
+        <!-- Simulator 4: Workshop Expansion Simulator -->
+        <div class="ailab-sim-card">
+          <div class="ailab-card-head sim">
+            <span class="ailab-icon">🏭</span>
+            <div><div class="ailab-card-title">Workshop Expansion Simulator</div><div class="ailab-card-sub">AI Simulator</div></div>
+          </div>
+          <p class="ailab-desc">Add virtual new workshops and see the projected impact on total enrolment capacity, revenue, and cost per student.</p>
+          <div class="ailab-sim-controls">
+            <div class="ailab-ctrl-row"><label>New workshops</label>
+              <input type="range" id="sim-newws" min="1" max="6" value="2" step="1"/>
+              <span id="sim-newws-val" class="sim-v">2</span></div>
+            <div class="ailab-ctrl-row"><label>Seats each</label>
+              <input type="range" id="sim-wsseats" min="10" max="40" value="25" step="5"/>
+              <span id="sim-wsseats-val" class="sim-v">25</span></div>
+          </div>
+          <div id="expansion-output" class="ailab-output sim"></div>
+        </div>
+
+      </div><!-- /ailab-sim-grid -->
+
+    </div><!-- /panel-ai -->
+
+  </main>
+
+  <!-- ── Hidden print report ── -->
+  <div id="print-report"></div>
+
+  <!-- ── QR Modal ── -->
+  <div id="qr-overlay">
+    <div id="qr-modal">
+      <div id="qr-modal-header">
+        <span id="qr-modal-title">Scan to Open Dashboard</span>
+        <button id="qr-close" title="Close">&times;</button>
+      </div>
+      <canvas id="qr-canvas"></canvas>
+      <div id="qr-url-label"></div>
+      <div id="qr-hint">Point your phone camera at the QR code</div>
+    </div>
+  </div>
+
+  <!-- ── FAQ Chatbot ── -->
+  <div id="chat-fab" title="FAQ Assistant">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    <span id="chat-badge" style="display:none">!</span>
+  </div>
+
+  <div id="chat-window">
+    <div id="chat-head">
+      <div id="chat-head-info">
+        <div id="chat-avatar">T</div>
+        <div>
+          <div id="chat-name">TVET Assistant</div>
+          <div id="chat-status">Ask me anything</div>
+        </div>
+      </div>
+      <button id="chat-close-btn" title="Close">&times;</button>
+    </div>
+    <div id="chat-messages"></div>
+    <div id="chat-suggestions"></div>
+    <div id="chat-input-row">
+      <input id="chat-input" type="text" placeholder="Type a question…" autocomplete="off" />
+      <button id="chat-send-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="toast">Saved</div>
+
+  <script>
+    // ── Default data ──────────────────────────────────────────────
+    var DEFAULTS = {
+      students: { value: '348', sub: 'Enrolled this semester', capacity: 400 },
+      tasks:    { value: '24',  sub: 'Active assignments',     completed: 14 },
+      checklist: [
+        { id: 'c1', text: 'Submit student attendance records',        done: true  },
+        { id: 'c2', text: 'Complete practical assessment marking',    done: true  },
+        { id: 'c3', text: 'Upload competency unit results to portal', done: false },
+        { id: 'c4', text: 'Schedule workshop maintenance review',     done: false },
+        { id: 'c5', text: 'Prepare next semester timetable draft',    done: false },
+        { id: 'c6', text: 'Conduct trainer performance appraisal',    done: false }
+      ],
+      workshops: [
+        { name: 'Electrical Installation',  capacity: 30, enrolled: 28, status: 'open' },
+        { name: 'Automotive Technology',    capacity: 25, enrolled: 25, status: 'full' },
+        { name: 'Welding & Fabrication',    capacity: 20, enrolled: 17, status: 'open' },
+        { name: 'Air-Cond & Refrigeration', capacity: 20, enrolled: 19, status: 'open' },
+        { name: 'Computer Networking',      capacity: 30, enrolled: 24, status: 'open' },
+        { name: 'Plumbing & Sanitation',    capacity: 20, enrolled: 0,  status: 'soon' }
+      ],
+      activeView: 'exec'
+    };
+
+    var KEY = 'tvet_dashboard_v1';
+
+    function load() {
+      try { return JSON.parse(localStorage.getItem(KEY)) || deepClone(DEFAULTS); }
+      catch(e) { return deepClone(DEFAULTS); }
+    }
+    function save(data) {
+      localStorage.setItem(KEY, JSON.stringify(data));
+      showToast('Saved');
+    }
+    function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
+
+    // ── WhatsApp helper ───────────────────────────────────────────
+    var WA_ICON = '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.105.546 4.082 1.5 5.797L0 24l6.389-1.676A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.89 0-3.663-.5-5.197-1.373l-.373-.22-3.797.996.995-3.69-.242-.386A9.944 9.944 0 012 12C2 6.478 6.478 2 12 2s10 4.478 10 10-4.478 10-10 10z"/></svg>';
+
+    function waAlert(message) {
+      return 'https://wa.me/?text=' + encodeURIComponent(message);
+    }
+
+    function makeWaBtn(message) {
+      var a = document.createElement('a');
+      a.className = 'wa-btn';
+      a.href = waAlert(message);
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.innerHTML = WA_ICON + ' WhatsApp Alert';
+      return a;
+    }
+
+    // Wire static alert buttons in the Executive panel
+    document.querySelectorAll('a.wa-btn[data-wa]').forEach(function(a) {
+      a.href = 'https://wa.me/?text=' + a.getAttribute('data-wa');
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+    });
+
+    // ── Toast ─────────────────────────────────────────────────────
+    var toastTimer;
+    function showToast(msg) {
+      var t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 1800);
+    }
+
+    // ── View switcher ─────────────────────────────────────────────
+    function setView(viewId) {
+      document.querySelectorAll('.view-tab').forEach(function(btn) {
+        btn.classList.toggle('active', btn.dataset.view === viewId);
+      });
+      document.querySelectorAll('.view-panel').forEach(function(p) {
+        p.classList.toggle('active', p.id === 'panel-' + viewId);
+      });
+      _state.activeView = viewId;
+      localStorage.setItem(KEY, JSON.stringify(_state));
+    }
+
+    document.querySelectorAll('.view-tab').forEach(function(btn) {
+      btn.addEventListener('click', function() { setView(btn.dataset.view); });
+    });
+
+    // ── Spark chart (AI forecast) ─────────────────────────────────
+    function renderSpark() {
+      var data   = [285, 302, 318, 327, 348, 372];
+      var labels = ['S1\'22','S2\'22','S1\'23','S2\'23','S1\'24','Fcst'];
+      var max    = Math.max.apply(null, data);
+      var bars   = document.getElementById('spark-bars');
+      var lbls   = document.getElementById('spark-labels');
+      bars.innerHTML = ''; lbls.innerHTML = '';
+      data.forEach(function(v, i) {
+        var b = document.createElement('div');
+        b.className = 'spark-bar';
+        b.style.height = Math.round(v / max * 48) + 'px';
+        if (i === data.length - 1) b.style.background = '#22a87a';
+        b.title = labels[i] + ': ' + v;
+        bars.appendChild(b);
+        var l = document.createElement('span');
+        l.textContent = labels[i];
+        lbls.appendChild(l);
+      });
+    }
+
+    // ── Render ops view ───────────────────────────────────────────
+    function render(data) {
+      renderStudents(data);
+      renderTasks(data);
+      renderChecklist(data);
+      renderWorkshops(data);
+    }
+
+    function renderStudents(data) {
+      var s = data.students;
+      document.getElementById('val-students').textContent = s.value;
+      document.getElementById('sub-students').textContent = s.sub;
+      var pct = Math.min(100, Math.round((parseInt(s.value) || 0) / s.capacity * 100));
+      document.getElementById('fill-students').style.width = pct + '%';
+      document.getElementById('label-students').textContent =
+        pct + '% of capacity (' + s.capacity + ' seats)';
+    }
+
+    function renderTasks(data) {
+      var t = data.tasks;
+      document.getElementById('val-tasks').textContent = t.value;
+      document.getElementById('sub-tasks').textContent = t.sub;
+      var total = parseInt(t.value) || 0;
+      var done  = Math.min(t.completed, total);
+      var pct   = total ? Math.round(done / total * 100) : 0;
+      document.getElementById('fill-tasks').style.width = pct + '%';
+      document.getElementById('label-tasks').textContent =
+        done + ' of ' + total + ' completed (' + pct + '%)';
+    }
+
+    function renderChecklist(data) {
+      var ul = document.getElementById('checklist');
+      ul.innerHTML = '';
+      data.checklist.forEach(function(item) {
+        var li = document.createElement('li');
+        if (item.done) li.classList.add('done');
+
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.id   = item.id;
+        cb.checked = item.done;
+        cb.addEventListener('change', function() {
+          item.done = this.checked;
+          li.classList.toggle('done', this.checked);
+          save(currentData());
+        });
+
+        var lbl = document.createElement('label');
+        lbl.htmlFor = item.id;
+        lbl.textContent = item.text;
+
+        li.appendChild(cb);
+        li.appendChild(lbl);
+        ul.appendChild(li);
+      });
+    }
+
+    function statusLabel(s) {
+      return s === 'open' ? 'Open' : s === 'full' ? 'Full' : 'Maintenance';
+    }
+
+    function renderWorkshops(data) {
+      var tbody = document.getElementById('workshop-tbody');
+      tbody.innerHTML = '';
+      data.workshops.forEach(function(ws, idx) {
+        var tr = document.createElement('tr');
+
+        var tdName = editableCell(ws.name, function(v) {
+          data.workshops[idx].name = v; save(currentData());
+        });
+        var tdCap = editableCell(ws.capacity, function(v) {
+          data.workshops[idx].capacity = parseInt(v) || 0;
+          save(currentData()); updateWorkshopCard(data);
+        });
+        var tdEnr = editableCell(ws.enrolled, function(v) {
+          data.workshops[idx].enrolled = parseInt(v) || 0;
+          save(currentData()); updateWorkshopCard(data);
+        });
+
+        var tdSt = document.createElement('td');
+        var badge = document.createElement('span');
+        badge.className = 'badge ' + ws.status;
+        badge.textContent = statusLabel(ws.status);
+        badge.title = 'Click to cycle status';
+        badge.style.cursor = 'pointer';
+        badge.addEventListener('click', function() {
+          var cycle = { open: 'full', full: 'soon', soon: 'open' };
+          ws.status = cycle[ws.status];
+          badge.className = 'badge ' + ws.status;
+          badge.textContent = statusLabel(ws.status);
+          save(currentData()); updateWorkshopCard(data);
+        });
+        tdSt.appendChild(badge);
+        // Add WhatsApp button for flagged statuses
+        if (ws.status === 'full' || ws.status === 'soon') {
+          var statusText = ws.status === 'full' ? 'Full — no more seats available' : 'Under Maintenance — workshop closed';
+          var msg = 'TVET Workshop Alert\n' + ws.name + '\nStatus: ' + statusLabel(ws.status) + '\n' + statusText + '\nPlease take necessary action.';
+          var waBtn = makeWaBtn(msg);
+          waBtn.style.display = 'block';
+          waBtn.style.marginTop = '6px';
+          tdSt.appendChild(waBtn);
+        }
+
+        // Risk score cell
+        var fillPct = ws.capacity ? Math.round(ws.enrolled / ws.capacity * 100) : 0;
+        var riskScore = wsRiskScore(ws);
+        var riskCls = riskScore >= 75 ? 'high' : riskScore >= 45 ? 'med' : 'low';
+        var riskLabel = riskScore >= 75 ? 'High' : riskScore >= 45 ? 'Med' : 'Low';
+        var tdRisk = document.createElement('td');
+        tdRisk.innerHTML = '<span class="risk-badge ' + riskCls + '">' + riskLabel + ' (' + riskScore + ')</span>';
+
+        tr.appendChild(tdName); tr.appendChild(tdCap);
+        tr.appendChild(tdEnr);  tr.appendChild(tdRisk); tr.appendChild(tdSt);
+        tbody.appendChild(tr);
+      });
+
+      updateWorkshopCard(data);
+      renderAI(data);
+    }
+
+    function editableCell(val, onBlur) {
+      var td = document.createElement('td');
+      td.contentEditable = 'true';
+      td.spellcheck = false;
+      td.textContent = val;
+      td.addEventListener('blur', function() { onBlur(td.textContent.trim()); });
+      td.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); td.blur(); }
+      });
+      return td;
+    }
+
+    function updateWorkshopCard(data) {
+      var counts = { open: 0, full: 0, soon: 0 };
+      data.workshops.forEach(function(ws) { counts[ws.status]++; });
+      document.getElementById('ws-open-count').textContent  = counts.open;
+      document.getElementById('ws-total-count').textContent = data.workshops.length;
+      var badgesEl = document.getElementById('ws-badges');
+      badgesEl.innerHTML = '';
+      if (counts.open) badgesEl.innerHTML += '<span class="badge open">' + counts.open + ' Open</span>';
+      if (counts.full) badgesEl.innerHTML += '<span class="badge full">' + counts.full + ' Full</span>';
+      if (counts.soon) badgesEl.innerHTML += '<span class="badge soon">' + counts.soon + ' Maintenance</span>';
+    }
+
+    function currentData() { return _state; }
+
+    function bindCardField(elId, setter) {
+      var el = document.getElementById(elId);
+      el.addEventListener('blur', function() {
+        setter(el.textContent.trim());
+        render(_state); save(_state);
+      });
+      el.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
+      });
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // ── AI ENGINE ────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════
+
+    // Historical snapshot data (last 4 semesters + current)
+    var HIST = {
+      enrolment:    [285, 302, 318, 327, 348],  // S1'22 → S1'24
+      passRate:     [74,  76,  78,  80,  82],
+      utilisation:  [80,  79,  77,  78,  76],
+      wsUptime:     [62,  75,  75,  87,  75]
+    };
+
+    // ── 1. Linear Regression forecast ────────────────────────────
+    function linRegForecast(series) {
+      var n = series.length;
+      var sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+      for (var i = 0; i < n; i++) { sumX += i; sumY += series[i]; sumXY += i * series[i]; sumX2 += i * i; }
+      var slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+      var intercept = (sumY - slope * sumX) / n;
+      return Math.round(intercept + slope * n);
+    }
+
+    // ── 2. Risk scorer ────────────────────────────────────────────
+    function wsRiskScore(ws) {
+      var fill = ws.capacity ? (ws.enrolled / ws.capacity) : 0;
+      var statusPenalty = ws.status === 'full' ? 40 : ws.status === 'soon' ? 50 : 0;
+      return Math.min(100, Math.round(fill * 60) + statusPenalty);
+    }
+
+    // ── 3. Anomaly detection (z-score) ───────────────────────────
+    function detectAnomaly(series, current) {
+      var n = series.length;
+      var mean = series.reduce(function(a,b){return a+b;},0) / n;
+      var variance = series.reduce(function(a,b){return a + Math.pow(b - mean, 2);}, 0) / n;
+      var sd = Math.sqrt(variance);
+      if (sd === 0) return { z: 0, anomaly: false };
+      var z = Math.abs((current - mean) / sd);
+      return { z: z.toFixed(2), mean: Math.round(mean), sd: Math.round(sd), anomaly: z > 1.5 };
+    }
+
+    // ── 4. NL Narrative generator ─────────────────────────────────
+    function buildNarrative(data) {
+      var students = parseInt(data.students.value) || 0;
+      var cap      = data.students.capacity || 400;
+      var sPct     = Math.round(students / cap * 100);
+      var forecast = linRegForecast(HIST.enrolment.concat([students]));
+      var passRate = 82, utilisation = 76;
+      var wsOpen   = data.workshops.filter(function(w){return w.status==='open';}).length;
+      var wsTotal  = data.workshops.length;
+
+      var enrolSentence = 'Enrolment stands at ' + students + ' students (' + sPct + '% of capacity), '
+        + (sPct >= 85 ? 'a strong performance with limited seats remaining.' : sPct >= 70 ? 'tracking well above the minimum viable threshold.' : 'below target — consider outreach or timetable expansion.');
+
+      var passSentence = 'The competency pass rate of ' + passRate + '% is '
+        + (passRate >= 80 ? 'above the 80% benchmark, reflecting effective delivery.' : 'below the 80% benchmark and requires immediate programme review.');
+
+      var utilSentence = 'Trainer utilisation at ' + utilisation + '% is '
+        + (utilisation >= 80 ? 'meeting the KPI target.' : 'below the 80% KPI target — a timetable review is recommended.');
+
+      var wsSentence = wsOpen + ' of ' + wsTotal + ' workshops are operational. '
+        + (wsOpen < wsTotal ? 'Restoring offline workshops would increase capacity by approximately ' + ((wsTotal - wsOpen) * 20) + ' seats.' : 'All workshops are at full capacity.');
+
+      var forecastSentence = 'AI projection for next semester: ' + forecast + ' students (linear trend, high confidence).';
+
+      return enrolSentence + ' ' + passSentence + ' ' + utilSentence + ' ' + wsSentence + ' ' + forecastSentence;
+    }
+
+    // ── 5. Checklist completion predictor ─────────────────────────
+    function buildClPredictor(data) {
+      var total    = data.checklist.length;
+      var done     = data.checklist.filter(function(i){return i.done;}).length;
+      var remaining = total - done;
+      var now      = new Date();
+      var semEnd   = new Date(now.getFullYear(), 11, 15); // Dec 15 approx
+      var daysLeft = Math.max(0, Math.round((semEnd - now) / 86400000));
+      var rateNeeded = remaining > 0 && daysLeft > 0 ? (remaining / daysLeft).toFixed(2) : 0;
+      var onTrack  = remaining === 0 || (daysLeft >= remaining * 7);
+      var text, cls;
+      if (remaining === 0) {
+        text = 'All ' + total + ' items completed. Semester checklist done!';
+        cls = 'on-track';
+      } else if (onTrack) {
+        text = remaining + ' items remaining · ' + daysLeft + ' days to semester end · pace: ' + rateNeeded + '/day';
+        cls = 'on-track';
+      } else {
+        text = remaining + ' items remaining · only ' + daysLeft + ' days left · ' + rateNeeded + ' items/day needed';
+        cls = 'at-risk';
+      }
+      return { text: text, cls: cls, label: remaining === 0 ? 'Done' : onTrack ? 'On Track' : 'At Risk' };
+    }
+
+    // ── 6. Threshold alert engine ─────────────────────────────────
+    function buildThresholds(data) {
+      var students    = parseInt(data.students.value) || 0;
+      var cap         = data.students.capacity || 400;
+      var sPct        = Math.round(students / cap * 100);
+      var passRate    = 82, utilisation = 76;
+      var wsOpen      = data.workshops.filter(function(w){return w.status==='open';}).length;
+      var wsTotal     = data.workshops.length;
+      var wsUptime    = Math.round(wsOpen / wsTotal * 100);
+
+      return [
+        { id: 'thr-enrolment',  label: 'Enrolment ' + sPct + '%',   cls: sPct >= 85 ? 'ok' : sPct >= 70 ? 'warn' : 'danger' },
+        { id: 'thr-passrate',   label: 'Pass Rate ' + passRate + '%', cls: passRate >= 80 ? 'ok' : passRate >= 70 ? 'warn' : 'danger' },
+        { id: 'thr-utilisation',label: 'Trainer Util. ' + utilisation + '%', cls: utilisation >= 80 ? 'ok' : utilisation >= 70 ? 'warn' : 'danger' },
+        { id: 'thr-workshop',   label: 'Workshop ' + wsUptime + '%', cls: wsUptime >= 80 ? 'ok' : wsUptime >= 60 ? 'warn' : 'danger' }
+      ];
+    }
+
+    // ── 7. Anomaly rows builder ────────────────────────────────────
+    function buildAnomalyRows(data) {
+      var students = parseInt(data.students.value) || 0;
+      var metrics  = [
+        { name: 'Student Enrolment', hist: HIST.enrolment, current: students, unit: ' students' },
+        { name: 'Competency Pass Rate', hist: HIST.passRate, current: 82, unit: '%' },
+        { name: 'Trainer Utilisation',  hist: HIST.utilisation, current: 76, unit: '%' },
+        { name: 'Workshop Uptime',      hist: HIST.wsUptime, current: Math.round(data.workshops.filter(function(w){return w.status==='open';}).length / data.workshops.length * 100), unit: '%' }
+      ];
+      return metrics.map(function(m) {
+        var res = detectAnomaly(m.hist, m.current);
+        var cls = !res.anomaly ? 'normal' : 'anomaly';
+        var label = !res.anomaly ? 'Normal' : '⚠ Anomaly';
+        return '<div class="anomaly-row">'
+          + '<div><div class="ar-name">' + m.name + '</div>'
+          + '<div class="ar-vals">Current: <strong>' + m.current + m.unit + '</strong> · 4-sem avg: ' + res.mean + m.unit + ' · σ: ' + res.sd + ' · z: ' + res.z + '</div></div>'
+          + '<span class="anomaly-badge ' + cls + '">' + label + '</span>'
+          + '</div>';
+      }).join('');
+    }
+
+    // ── KPI Ticker renderer ───────────────────────────────────────
+    var _tickerAnimId = null;
+    function renderTicker(data) {
+      var track = document.getElementById('ticker-track');
+      if (!track) return;
+
+      var students     = parseInt(data.students.value) || 0;
+      var cap          = data.students.capacity || 400;
+      var enrolPct     = Math.round(students / cap * 100);
+      var passRate     = 82, utilisation = 76;
+      var wsOpen       = data.workshops.filter(function(w){ return w.status === 'open'; }).length;
+      var wsTotal      = data.workshops.length;
+      var wsUptime     = Math.round(wsOpen / wsTotal * 100);
+      var forecast     = linRegForecast(HIST.enrolment.concat([students]));
+      var tasksDone    = data.tasks.completed || 0;
+      var tasksTotal   = parseInt(data.tasks.value) || 0;
+      var tasksPct     = tasksTotal ? Math.round(tasksDone / tasksTotal * 100) : 0;
+
+      var enrolCls  = enrolPct  >= 85 ? 'ok' : enrolPct  >= 70 ? 'warn' : 'danger';
+      var passCls   = passRate  >= 80 ? 'ok' : passRate  >= 70 ? 'warn' : 'danger';
+      var utilCls   = utilisation >= 80 ? 'ok' : utilisation >= 70 ? 'warn' : 'danger';
+      var wsCls     = wsUptime  >= 80 ? 'ok' : wsUptime  >= 60 ? 'warn' : 'danger';
+      var tasksCls  = tasksPct  >= 80 ? 'ok' : tasksPct  >= 50 ? 'warn' : 'danger';
+
+      var enrolArrow = '▲'; // static — always growing
+      var passArrow  = passRate >= 80 ? '▲' : '▼';
+      var utilArrow  = utilisation >= 80 ? '▲' : '▼';
+
+      var items = [
+        { label: 'Student Enrolment', val: students + ' / ' + cap + ' (' + enrolPct + '%)', cls: enrolCls, arrow: enrolArrow },
+        { label: 'Competency Pass Rate', val: passRate + '%', cls: passCls, arrow: passArrow },
+        { label: 'Trainer Utilisation', val: utilisation + '%', cls: utilCls, arrow: utilArrow },
+        { label: 'Workshop Uptime', val: wsOpen + '/' + wsTotal + ' (' + wsUptime + '%)', cls: wsCls, arrow: wsUptime >= 80 ? '→' : '▼' },
+        { label: 'Task Completion', val: tasksDone + '/' + tasksTotal + ' (' + tasksPct + '%)', cls: tasksCls, arrow: tasksPct >= 80 ? '▲' : '→' },
+        { label: 'AI Forecast (Next Sem)', val: forecast + ' students', cls: 'ok', arrow: '▲' },
+      ];
+
+      // Build one set of items, then duplicate for seamless loop
+      function makeItems() {
+        return items.map(function(it) {
+          return '<span class="ticker-item">'
+            + '<span class="ti-dot ' + it.cls + '"></span>'
+            + '<span style="display:flex;flex-direction:column;gap:1px">'
+            +   '<span class="ti-label">' + it.label + '</span>'
+            +   '<span class="ti-val ' + it.cls + '">' + it.val + ' <span class="ti-arrow">' + it.arrow + '</span></span>'
+            + '</span>'
+            + '</span>';
+        }).join('');
+      }
+      // Double the content so the animation loops seamlessly
+      track.innerHTML = makeItems() + makeItems();
+
+      // Measure and set animation duration proportional to width
+      var totalW = track.scrollWidth / 2; // half because doubled
+      var speed  = 60; // px per second
+      var dur    = Math.round(totalW / speed);
+      track.style.animation = 'none';
+      // Force reflow to restart animation
+      void track.offsetWidth;
+      track.style.animation = 'ticker-scroll ' + dur + 's linear infinite';
+
+      // Pause on hover
+      track.addEventListener('mouseenter', function() { track.classList.add('paused'); });
+      track.addEventListener('mouseleave', function() { track.classList.remove('paused'); });
+    }
+
+    // ── Master AI render ──────────────────────────────────────────
+    function renderAI(data) {
+      // Narrative
+      var narrativeEl = document.getElementById('ai-narrative-text');
+      if (narrativeEl) narrativeEl.textContent = buildNarrative(data);
+
+      // Threshold bar (exec panel pills)
+      buildThresholds(data).forEach(function(t) {
+        var el = document.getElementById(t.id);
+        if (!el) return;
+        el.textContent = t.label;
+        el.className = 'thr-pill ' + t.cls;
+      });
+
+      // KPI Ticker bar
+      renderTicker(data);
+
+      // Checklist predictor
+      var cl = buildClPredictor(data);
+      var clText  = document.getElementById('cl-predictor-text');
+      var clBadge = document.getElementById('cl-predictor-badge');
+      if (clText)  clText.textContent  = cl.text;
+      if (clBadge) { clBadge.textContent = cl.label; clBadge.className = 'cl-badge ' + cl.cls; }
+
+      // Anomaly detection
+      var anomalyEl = document.getElementById('anomaly-rows');
+      if (anomalyEl) anomalyEl.innerHTML = buildAnomalyRows(data);
+
+      // Update forecast in spark
+      var forecastVal = linRegForecast(HIST.enrolment.concat([parseInt(data.students.value)||0]));
+      var sparkData  = [285, 302, 318, 327, parseInt(data.students.value)||348, forecastVal];
+      var sparkMax   = Math.max.apply(null, sparkData);
+      var sparkLabels= ["S1'22","S2'22","S1'23","S2'23","S1'24","Fcst"];
+      var bars = document.getElementById('spark-bars');
+      var lbls = document.getElementById('spark-labels');
+      if (bars && lbls) {
+        bars.innerHTML = ''; lbls.innerHTML = '';
+        sparkData.forEach(function(v, i) {
+          var b = document.createElement('div');
+          b.className = 'spark-bar';
+          b.style.height = Math.round(v / sparkMax * 48) + 'px';
+          if (i === sparkData.length - 1) b.style.background = '#22a87a';
+          b.title = sparkLabels[i] + ': ' + v;
+          bars.appendChild(b);
+          var l = document.createElement('span');
+          l.textContent = sparkLabels[i];
+          lbls.appendChild(l);
+        });
+        // Update the forecast number text in the panel
+        var fcEl = document.querySelector('#panel-exec .panel-card [style*="font-size:2rem"]');
+        if (fcEl) fcEl.textContent = forecastVal;
+      }
+    }
+
+    // ── ROI Simulator ─────────────────────────────────────────────
+    (function() {
+      var FEES_PER_STUDENT = 500;
+      var INDUSTRY = 85000;
+      var MAINTENANCE = 62000;
+      function recalc() {
+        var students = parseInt(document.getElementById('sim-students').value);
+        var grant    = parseInt(document.getElementById('sim-grant').value) * 1000;
+        var costs    = parseInt(document.getElementById('sim-costs').value) * 1000;
+        var fees     = students * FEES_PER_STUDENT;
+        var surplus  = grant + INDUSTRY + fees - costs - MAINTENANCE;
+        document.getElementById('sim-students-val').textContent = students;
+        document.getElementById('sim-grant-val').textContent   = 'RM ' + document.getElementById('sim-grant').value + 'k';
+        document.getElementById('sim-costs-val').textContent   = 'RM ' + document.getElementById('sim-costs').value + 'k';
+        var surplusEl = document.getElementById('sim-surplus');
+        surplusEl.textContent = (surplus >= 0 ? 'RM ' : '−RM ') + Math.abs(surplus).toLocaleString();
+        surplusEl.style.color = surplus >= 0 ? '#15803d' : '#b91c1c';
+        var baseSurplus = 420000 + INDUSTRY + 348 * FEES_PER_STUDENT - 398000 - MAINTENANCE;
+        var diff = surplus - baseSurplus;
+        var pctDiff = baseSurplus ? Math.round(diff / Math.abs(baseSurplus) * 100) : 0;
+        document.getElementById('sim-note').textContent =
+          'Student fees = RM 500 × ' + students + ' = RM ' + fees.toLocaleString() + '. '
+          + (diff !== 0 ? 'Surplus ' + (diff > 0 ? '+' : '') + 'RM ' + Math.abs(diff).toLocaleString() + ' (' + (pctDiff > 0 ? '+' : '') + pctDiff + '%) vs baseline.' : 'Same as baseline.');
+      }
+      ['sim-students','sim-grant','sim-costs'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('input', recalc);
+      });
+      recalc();
+    })();
+
+    // ══════════════════════════════════════════════════════════════
+    // ── AI LAB ENGINE ────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════
+    function initAILab() {
+
+      // ── Helpers ─────────────────────────────────────────────────
+      function el(id) { return document.getElementById(id); }
+      function fmt(n) { return 'RM ' + Math.abs(n).toLocaleString(); }
+      function pct(a, b) { return b ? Math.round(a / b * 100) : 0; }
+
+      // ─────────────────────────────────────────────────────────────
+      // AI FUNCTIONS
+      // ─────────────────────────────────────────────────────────────
+
+      function runDropout() {
+        var rows = _state.workshops.map(function(ws) {
+          var fill = pct(ws.enrolled, ws.capacity);
+          var risk, cls;
+          if (ws.status === 'soon')       { risk = 'High — closed, no students'; cls = 'hi'; }
+          else if (ws.status === 'full')  { risk = 'Med — full, no room to absorb'; cls = 'md'; }
+          else if (fill < 60)             { risk = 'High — under 60% fill rate'; cls = 'hi'; }
+          else if (fill < 80)             { risk = 'Med — below target fill'; cls = 'md'; }
+          else                            { risk = 'Low — healthy enrolment'; cls = 'lo'; }
+          return '<div class="ailab-result-row"><span class="ar-l">' + ws.name + ' (' + fill + '%)</span>'
+            + '<span class="ar-v ' + cls + '">' + risk + '</span></div>';
+        }).join('');
+        el('dropout-output').innerHTML = rows;
+      }
+
+      function runTrainer() {
+        var total = _state.workshops.reduce(function(a,w){return a+w.enrolled;},0);
+        var currentUtil = 76;
+        var targetUtil  = 80;
+        var gap = targetUtil - currentUtil;
+        var extraHrsNeeded = Math.round(total * (gap / 100) * 2);
+        var lines = [
+          '📊 Current trainer utilisation: ' + currentUtil + '% (target: ' + targetUtil + '%)',
+          '📉 Gap: ' + gap + ' percentage points',
+          '⏱ Estimated extra contact hours needed: ' + extraHrsNeeded + ' hrs/week',
+          '',
+          '🔧 Recommendations:',
+          '  1. Merge small cohorts (< 10 students) into shared sessions',
+          '  2. Assign Plumbing trainer to cover Air-Cond overflow (+3 hrs)',
+          '  3. Schedule 2 extra sessions/week for Welding & Fabrication',
+          '  4. Review timetable — eliminate back-to-back idle blocks'
+        ];
+        el('trainer-output').textContent = lines.join('\n');
+      }
+
+      function runCapGap() {
+        var rows = _state.workshops.map(function(ws) {
+          var gap = Math.max(0, Math.round(ws.capacity * 0.95) - ws.enrolled);
+          var rev = gap * 500;
+          var cls = gap > 5 ? 'hi' : gap > 2 ? 'md' : 'lo';
+          return '<div class="ailab-result-row"><span class="ar-l">' + ws.name + '</span>'
+            + '<span class="ar-v ' + cls + '">' + gap + ' seats · +' + fmt(rev) + ' potential</span></div>';
+        }).join('');
+        var totalGap = _state.workshops.reduce(function(a,w){ return a + Math.max(0, Math.round(w.capacity*0.95)-w.enrolled); }, 0);
+        el('capgap-output').innerHTML = rows
+          + '<div class="ailab-result-row" style="margin-top:6px;border-top:1px solid #e5e7eb;padding-top:6px">'
+          + '<span class="ar-l"><strong>Total opportunity</strong></span>'
+          + '<span class="ar-v lo"><strong>' + totalGap + ' seats · ' + fmt(totalGap * 500) + '</strong></span></div>';
+      }
+
+      function runHealth() {
+        var students  = parseInt(_state.students.value) || 0;
+        var cap       = _state.students.capacity || 400;
+        var enrolPct  = pct(students, cap);
+        var passRate  = 82, util = 76;
+        var wsOpen    = _state.workshops.filter(function(w){return w.status==='open';}).length;
+        var wsTotal   = _state.workshops.length;
+        var wsUptime  = pct(wsOpen, wsTotal);
+        var tasksDone = pct(Math.min(_state.tasks.completed, parseInt(_state.tasks.value)||0), parseInt(_state.tasks.value)||1);
+
+        // Weighted score: enrol 25%, pass 30%, util 20%, ws 15%, tasks 10%
+        var score = Math.round(
+          (enrolPct / 100) * 25 +
+          (passRate  / 100) * 30 +
+          (util      / 100) * 20 +
+          (wsUptime  / 100) * 15 +
+          (tasksDone / 100) * 10
+        );
+        var grade = score >= 85 ? 'A — Excellent' : score >= 70 ? 'B — Good' : score >= 55 ? 'C — Fair' : 'D — Needs Improvement';
+        var colour = score >= 85 ? '#15803d' : score >= 70 ? '#a16207' : '#b91c1c';
+        el('health-output').innerHTML =
+          '<div class="health-dial">'
+          + '<div class="hd-score" style="color:' + colour + '">' + score + '</div>'
+          + '<div class="hd-grade" style="color:' + colour + '">' + grade + '</div>'
+          + '<div class="hd-bar"><div class="hd-fill" style="width:' + score + '%;background:' + colour + '"></div></div>'
+          + '</div>'
+          + '<div style="font-size:0.77rem;color:#57606a;line-height:1.6">'
+          + 'Enrolment: ' + enrolPct + '% (×0.25) · Pass Rate: ' + passRate + '% (×0.30)<br>'
+          + 'Trainer Util: ' + util + '% (×0.20) · WS Uptime: ' + wsUptime + '% (×0.15) · Tasks: ' + tasksDone + '% (×0.10)'
+          + '</div>';
+      }
+
+      // ─────────────────────────────────────────────────────────────
+      // AI GENERATORS
+      // ─────────────────────────────────────────────────────────────
+
+      function genBMReport() {
+        var students  = parseInt(_state.students.value) || 0;
+        var cap       = _state.students.capacity || 400;
+        var enrolPct  = pct(students, cap);
+        var wsOpen    = _state.workshops.filter(function(w){return w.status==='open';}).length;
+        var wsTotal   = _state.workshops.length;
+        var forecast  = linRegForecast(HIST.enrolment.concat([students]));
+        var text =
+          'Bagi semester semasa Tahun Akademik 2024/2025, jumlah pelajar yang berdaftar adalah seramai '
+          + students + ' orang (' + enrolPct + '% daripada kapasiti ' + cap + ' tempat). '
+          + 'Kadar lulus kompetensi mencapai 82%, iaitu melebihi sasaran 80% yang telah ditetapkan. '
+          + 'Walau bagaimanapun, utilisasi jurulatih berada pada paras 76%, di bawah KPI 80%, '
+          + 'dan tindakan penambahbaikan jadual waktu latihan sedang diambil. '
+          + 'Sebanyak ' + wsOpen + ' daripada ' + wsTotal + ' bengkel beroperasi sepenuhnya. '
+          + 'Berdasarkan analisis trend AI, unjuran pengambilan semester hadapan ialah ' + forecast + ' pelajar, '
+          + 'menunjukkan pertumbuhan berterusan yang positif. Pihak pengurusan akan terus memantau '
+          + 'dan memastikan pencapaian KPI pada tahap tertinggi.';
+        el('bm-report-output').textContent = text;
+      }
+
+      function genActionPlan() {
+        var students  = parseInt(_state.students.value) || 0;
+        var cap       = _state.students.capacity || 400;
+        var enrolPct  = pct(students, cap);
+        var pending   = _state.checklist.filter(function(i){return !i.done;}).length;
+        var wsIssues  = _state.workshops.filter(function(w){return w.status!=='open';}).length;
+        var plan = [];
+        var n = 1;
+        if (76 < 80)    plan.push(n++ + '. [HIGH] Review trainer timetable — increase utilisation from 76% to ≥80% by assigning cross-workshop sessions.');
+        if (wsIssues)   plan.push(n++ + '. [HIGH] Resolve ' + wsIssues + ' workshop(s) not Open — assign trainer to Plumbing & fast-track maintenance clearance.');
+        if (enrolPct < 85) plan.push(n++ + '. [MED] Launch targeted enrolment campaign — ' + (cap - students) + ' seats remain. Target: reach 85% fill rate.');
+        if (pending)    plan.push(n++ + '. [MED] Complete ' + pending + ' pending checklist item(s) before semester end.');
+        plan.push(n++ + '. [LOW] Coordinate renewal of 3 industry MoUs due Q1 2025 with Industry Liaison unit.');
+        if (plan.length < 5) plan.push(n++ + '. [LOW] Review and update KPI baselines for next academic year planning cycle.');
+        el('actionplan-output').textContent = plan.join('\n');
+      }
+
+      function genWABroadcast() {
+        var students = parseInt(_state.students.value) || 0;
+        var cap      = _state.students.capacity || 400;
+        var forecast = linRegForecast(HIST.enrolment.concat([students]));
+        var wsOpen   = _state.workshops.filter(function(w){return w.status==='open';}).length;
+        var msg =
+          '📊 *TVET Dashboard Update*\n'
+          + '────────────────────\n'
+          + '👥 Enrolment: *' + students + '* / ' + cap + ' (' + pct(students,cap) + '%)\n'
+          + '✅ Pass Rate: *82%* (target: 80%)\n'
+          + '🏭 Workshops: *' + wsOpen + '* operational\n'
+          + '📈 AI Forecast (next sem): *' + forecast + '* students\n'
+          + '⚠ Alerts: Trainer util 76% · Plumbing maintenance\n'
+          + '────────────────────\n'
+          + '_Generated by TVET Dashboard AI_';
+        el('wabroadcast-output').textContent = msg;
+        var sendBtn = el('wabroadcast-send');
+        sendBtn.href = 'https://wa.me/?text=' + encodeURIComponent(msg);
+        sendBtn.style.display = 'inline-flex';
+      }
+
+      function genTargets() {
+        var rows = _state.workshops.map(function(ws) {
+          var fill    = ws.capacity ? pct(ws.enrolled, ws.capacity) : 0;
+          var target  = ws.status === 'soon' ? Math.round(ws.capacity * 0.8) : Math.min(ws.capacity, Math.round(ws.enrolled * 1.1));
+          var growth  = ws.enrolled > 0 ? '+' + Math.round((target - ws.enrolled) / ws.enrolled * 100) + '%' : 'New';
+          return '<div class="ailab-result-row"><span class="ar-l">' + ws.name + ' (now: ' + ws.enrolled + ')</span>'
+            + '<span class="ar-v lo">Target: ' + target + ' (' + growth + ')</span></div>';
+        }).join('');
+        el('targets-output').innerHTML = rows;
+      }
+
+      // ─────────────────────────────────────────────────────────────
+      // AI SIMULATORS (live sliders)
+      // ─────────────────────────────────────────────────────────────
+
+      function simGrowth() {
+        var base = parseInt(_state.students.value) || 348;
+        var rate = parseInt(el('sim-growth').value) / 100;
+        el('sim-growth-val').textContent = Math.round(rate * 100) + '%';
+        var sems  = [base];
+        var consv = [base], opti = [base];
+        for (var i = 0; i < 4; i++) {
+          sems.push(Math.round(sems[sems.length-1]  * (1 + rate)));
+          consv.push(Math.round(consv[consv.length-1] * (1 + rate * 0.5)));
+          opti.push(Math.round(opti[opti.length-1]  * (1 + rate * 1.5)));
+        }
+        var labels = ['Now', 'S+1', 'S+2', 'S+3', 'S+4'];
+        var rows = labels.map(function(l, i) {
+          return '<div class="ailab-result-row">'
+            + '<span class="ar-l">' + l + '</span>'
+            + '<span class="ar-v lo">Moderate: ' + sems[i] + '</span>'
+            + '<span class="ar-v md" style="min-width:90px">Conservative: ' + consv[i] + '</span>'
+            + '<span class="ar-v hi" style="min-width:90px">Optimistic: ' + opti[i] + '</span>'
+            + '</div>';
+        }).join('');
+        el('growth-output').innerHTML = rows;
+      }
+
+      function simPassRate() {
+        var base    = parseInt(_state.students.value) || 348;
+        var current = Math.round(base * 0.82);
+        var lift    = parseInt(el('sim-lift').value);
+        el('sim-lift-val').textContent = '+' + lift + '%';
+        var newRate    = Math.min(100, 82 + lift);
+        var newPassing = Math.round(base * newRate / 100);
+        var extra      = newPassing - current;
+        var lines = [
+          'Current pass rate: 82% → ' + current + ' students pass',
+          'With +' + lift + '% intervention lift: ' + newRate + '% → ' + newPassing + ' students pass',
+          'Additional students passing: +' + extra,
+          'Estimated cost of intervention: RM ' + (extra * 250).toLocaleString(),
+          'Value per additional graduate (industry): RM ' + (extra * 2400).toLocaleString()
+        ];
+        el('passrate-output').textContent = lines.join('\n');
+      }
+
+      function simBudget() {
+        var cut     = parseInt(el('sim-grantcut').value);
+        el('sim-grantcut-val').textContent = '−' + cut + '%';
+        var baseGrant   = 420000;
+        var newGrant    = Math.round(baseGrant * (1 - cut / 100));
+        var industry    = 85000, fees = 174000, costs = 398000, maint = 62000;
+        var surplus     = newGrant + industry + fees - costs - maint;
+        var minStudents = Math.ceil((costs + maint - newGrant - industry) / 500);
+        var cls = surplus >= 0 ? 'lo' : 'hi';
+        var rows = [
+          { l: 'JPK Grant (after cut)', v: fmt(newGrant) },
+          { l: 'Industry + Fees', v: fmt(industry + fees) },
+          { l: 'Total Costs', v: '−' + fmt(costs + maint) },
+          { l: 'Net Surplus / Deficit', v: (surplus >= 0 ? '' : '−') + fmt(surplus), cls: cls },
+          { l: 'Min. students to break even', v: Math.max(0, minStudents) + ' students' }
+        ];
+        el('budget-output').innerHTML = rows.map(function(r) {
+          return '<div class="ailab-result-row"><span class="ar-l">' + r.l + '</span>'
+            + '<span class="ar-v ' + (r.cls || '') + '">' + r.v + '</span></div>';
+        }).join('');
+      }
+
+      function simExpansion() {
+        var newWs    = parseInt(el('sim-newws').value);
+        var seats    = parseInt(el('sim-wsseats').value);
+        el('sim-newws-val').textContent   = newWs;
+        el('sim-wsseats-val').textContent = seats;
+        var curCap    = _state.workshops.reduce(function(a,w){return a+w.capacity;},0);
+        var newCap    = curCap + newWs * seats;
+        var projEnrol = Math.round(newCap * 0.87);
+        var projFees  = projEnrol * 500;
+        var projCosts = 398000 + newWs * 35000; // ~35k per new workshop
+        var projGrant = 420000;
+        var projSurplus = projGrant + 85000 + projFees - projCosts - 62000;
+        var costPerSt = Math.round((projCosts + 62000) / projEnrol);
+        var rows = [
+          { l: 'New total capacity', v: newCap + ' seats (+' + (newWs * seats) + ')' },
+          { l: 'Projected enrolment (87%)', v: projEnrol + ' students' },
+          { l: 'Projected fee revenue', v: fmt(projFees) },
+          { l: 'Additional operating costs', v: '−' + fmt(newWs * 35000) },
+          { l: 'Projected net surplus', v: fmt(projSurplus), cls: projSurplus >= 0 ? 'lo' : 'hi' },
+          { l: 'Cost per student', v: 'RM ' + costPerSt.toLocaleString() }
+        ];
+        el('expansion-output').innerHTML = rows.map(function(r) {
+          return '<div class="ailab-result-row"><span class="ar-l">' + r.l + '</span>'
+            + '<span class="ar-v ' + (r.cls || '') + '">' + r.v + '</span></div>';
+        }).join('');
+      }
+
+      // ─────────────────────────────────────────────────────────────
+      // Wire Run buttons
+      // ─────────────────────────────────────────────────────────────
+      var FN_MAP = {
+        dropout:    runDropout,
+        trainer:    runTrainer,
+        capgap:     runCapGap,
+        health:     runHealth,
+        bmreport:   genBMReport,
+        actionplan: genActionPlan,
+        wabroadcast:genWABroadcast,
+        targets:    genTargets
+      };
+      document.querySelectorAll('.ailab-run-btn[data-fn]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var fn = FN_MAP[btn.getAttribute('data-fn')];
+          if (fn) fn();
+        });
+      });
+
+      // Wire simulator sliders (live update)
+      var SIM_MAP = {
+        'sim-growth':   simGrowth,
+        'sim-lift':     simPassRate,
+        'sim-grantcut': simBudget,
+        'sim-newws':    simExpansion,
+        'sim-wsseats':  simExpansion
+      };
+      Object.keys(SIM_MAP).forEach(function(id) {
+        var el2 = document.getElementById(id);
+        if (el2) el2.addEventListener('input', SIM_MAP[id]);
+      });
+
+      // Run all simulators once on load so outputs are pre-populated
+      simGrowth(); simPassRate(); simBudget(); simExpansion();
+
+    } // end initAILab
+
+    // ── Init ──────────────────────────────────────────────────────
+    var _state = load();
+    if (!_state.activeView) _state.activeView = 'exec';
+
+    render(_state);
+    renderSpark();
+    setView(_state.activeView);
+    renderAI(_state);
+    initAILab();
+
+    bindCardField('val-students', function(v){ _state.students.value = v; renderAI(_state); });
+    bindCardField('sub-students', function(v){ _state.students.sub   = v; });
+    bindCardField('val-tasks',    function(v){ _state.tasks.value    = v; renderAI(_state); });
+    bindCardField('sub-tasks',    function(v){ _state.tasks.sub      = v; });
+
+    // ── Reset ─────────────────────────────────────────────────────
+    document.getElementById('resetBtn').addEventListener('click', function() {
+      if (!confirm('Reset all data to defaults? This cannot be undone.')) return;
+      _state = deepClone(DEFAULTS);
+      localStorage.setItem(KEY, JSON.stringify(_state));
+      render(_state);
+      setView('exec');
+      renderAI(_state);
+      showToast('Reset to defaults');
+    });
+
+    // ── PDF / Print ───────────────────────────────────────────────
+    function printReport() {
+      var s   = _state;
+      var now = new Date();
+      var dateStr = now.toLocaleDateString('en-MY', { day:'2-digit', month:'long', year:'numeric' });
+      var timeStr = now.toLocaleTimeString('en-MY', { hour:'2-digit', minute:'2-digit' });
+
+      // KPIs
+      var students  = parseInt(s.students.value) || 0;
+      var capacity  = s.students.capacity || 400;
+      var sPct      = Math.min(100, Math.round(students / capacity * 100));
+      var tasks     = parseInt(s.tasks.value) || 0;
+      var completed = Math.min(s.tasks.completed, tasks);
+      var tPct      = tasks ? Math.round(completed / tasks * 100) : 0;
+      var wsOpen    = s.workshops.filter(function(w){ return w.status === 'open'; }).length;
+      var wsTotal   = s.workshops.length;
+
+      // Checklist rows
+      var clRows = s.checklist.map(function(item) {
+        return '<li class="' + (item.done ? 'done' : '') + '">' + item.text + '</li>';
+      }).join('');
+
+      // Workshop rows
+      var wsRows = s.workshops.map(function(ws) {
+        var stLabel = statusLabel(ws.status);
+        var pct = ws.capacity ? Math.round(ws.enrolled / ws.capacity * 100) : 0;
+        return '<tr><td>' + ws.name + '</td><td style="text-align:center">' + ws.capacity +
+               '</td><td style="text-align:center">' + ws.enrolled +
+               '</td><td style="text-align:center">' + pct + '%</td><td>' + stLabel + '</td></tr>';
+      }).join('');
+
+      var html =
+        '<div class="rpt-header">' +
+          '<div class="rpt-logo-row">' +
+            '<div class="rpt-logo">T</div>' +
+            '<div class="rpt-org">' +
+              '<h1>Institut Latihan Perindustrian</h1>' +
+              '<p>Kementerian Sumber Manusia Malaysia &nbsp;·&nbsp; TVET Management System</p>' +
+            '</div>' +
+          '</div>' +
+          '<div class="rpt-title">Laporan Prestasi TVET / TVET Performance Report</div>' +
+          '<div class="rpt-meta">Tahun Akademik: 2024 / 2025 &nbsp;·&nbsp; Semester: 1 &nbsp;·&nbsp; Tarikh Cetak: ' + dateStr + ', ' + timeStr + '</div>' +
+        '</div>' +
+
+        // ── Section 1: KPIs ──
+        '<div class="rpt-section">' +
+          '<div class="rpt-section-title">1. Petunjuk Prestasi Utama (KPI)</div>' +
+          '<div class="rpt-kpi-grid">' +
+            '<div class="rpt-kpi"><div class="rpt-kpi-label">Enrolmen Pelajar</div><div class="rpt-kpi-val">' + students + '</div><div class="rpt-kpi-sub">' + sPct + '% of ' + capacity + ' seats</div></div>' +
+            '<div class="rpt-kpi"><div class="rpt-kpi-label">Kadar Lulus Kompetensi</div><div class="rpt-kpi-val">82%</div><div class="rpt-kpi-sub">▲ +4 pts vs last term</div></div>' +
+            '<div class="rpt-kpi"><div class="rpt-kpi-label">Utilisasi Jurulatih</div><div class="rpt-kpi-val">76%</div><div class="rpt-kpi-sub">Target: 80%</div></div>' +
+            '<div class="rpt-kpi"><div class="rpt-kpi-label">Operasi Workshop</div><div class="rpt-kpi-val">' + wsOpen + '/' + wsTotal + '</div><div class="rpt-kpi-sub">Workshops operational</div></div>' +
+          '</div>' +
+        '</div>' +
+
+        // ── Section 2: Tasks ──
+        '<div class="rpt-section">' +
+          '<div class="rpt-section-title">2. Status Tugasan (Tasks)</div>' +
+          '<table class="rpt-table"><thead><tr><th>Metrik</th><th>Nilai</th></tr></thead><tbody>' +
+            '<tr><td>Jumlah Tugasan Aktif</td><td>' + tasks + '</td></tr>' +
+            '<tr><td>Tugasan Selesai</td><td>' + completed + ' (' + tPct + '%)</td></tr>' +
+            '<tr><td>Tugasan Belum Selesai</td><td>' + (tasks - completed) + '</td></tr>' +
+          '</tbody></table>' +
+        '</div>' +
+
+        // ── Section 3: Workshop ──
+        '<div class="rpt-section">' +
+          '<div class="rpt-section-title">3. Butiran Workshop</div>' +
+          '<table class="rpt-table"><thead><tr><th>Workshop</th><th style="text-align:center">Kapasiti</th><th style="text-align:center">Daftar</th><th style="text-align:center">%</th><th>Status</th></tr></thead>' +
+          '<tbody>' + wsRows + '</tbody></table>' +
+        '</div>' +
+
+        // ── Section 4: Checklist ──
+        '<div class="rpt-section">' +
+          '<div class="rpt-section-title">4. Senarai Semak Akhir Semester</div>' +
+          '<ul class="rpt-checklist">' + clRows + '</ul>' +
+        '</div>' +
+
+        // ── Section 5: ROI ──
+        '<div class="rpt-section">' +
+          '<div class="rpt-section-title">5. Ringkasan Kewangan / ROI</div>' +
+          '<div class="rpt-roi">' +
+            '<div class="rpt-roi-row"><span>Geran Latihan (JPK)</span><span>RM 420,000</span></div>' +
+            '<div class="rpt-roi-row"><span>Sumbangan Industri</span><span>RM 85,000</span></div>' +
+            '<div class="rpt-roi-row"><span>Yuran Pelajar</span><span>RM 174,000</span></div>' +
+            '<div class="rpt-roi-row"><span>Kos Operasi</span><span>−RM 398,000</span></div>' +
+            '<div class="rpt-roi-row"><span>Kos Penyelenggaraan</span><span>−RM 62,000</span></div>' +
+            '<div class="rpt-roi-total"><span>Lebihan Bersih</span><span>RM 219,000</span></div>' +
+          '</div>' +
+        '</div>' +
+
+        // ── Signature box ──
+        '<div class="rpt-sig">' +
+          '<div class="rpt-sig-box">' +
+            '<div style="height:48px;"></div>' +
+            '<div class="rpt-sig-line"><strong>Disediakan oleh:</strong></div>' +
+            '<div class="rpt-sig-line">Nama: ___________________________</div>' +
+            '<div class="rpt-sig-line">Jawatan: ___________________________</div>' +
+            '<div class="rpt-sig-line">Tarikh: ' + dateStr + '</div>' +
+          '</div>' +
+          '<div class="rpt-sig-box">' +
+            '<div style="height:48px;"></div>' +
+            '<div class="rpt-sig-line"><strong>Disahkan oleh:</strong></div>' +
+            '<div class="rpt-sig-line">Nama: ___________________________</div>' +
+            '<div class="rpt-sig-line">Jawatan: Pengarah / Director</div>' +
+            '<div class="rpt-sig-line">Cop Rasmi: ____________________</div>' +
+          '</div>' +
+        '</div>' +
+
+        // ── Footer ──
+        '<div class="rpt-footer">' +
+          '<span>SULIT — Untuk Kegunaan Dalaman Sahaja</span>' +
+          '<span>Dicetak: ' + dateStr + ' ' + timeStr + ' &nbsp;·&nbsp; TVET Management System v1.0</span>' +
+        '</div>';
+
+      document.getElementById('print-report').innerHTML = html;
+      window.print();
+    }
+
+    document.getElementById('pdfBtn').addEventListener('click', printReport);
+
+    // ── QR Code ───────────────────────────────────────────────────
+    // Minimal QR encoder: uses Google Charts API (no external JS lib needed)
+    // Falls back to a pure-JS micro encoder for offline use.
+    (function() {
+      var overlay = document.getElementById('qr-overlay');
+      var canvas  = document.getElementById('qr-canvas');
+      var urlLbl  = document.getElementById('qr-url-label');
+
+      function openQR() {
+        var url = window.location.href;
+        urlLbl.textContent = url.length > 60 ? url.slice(0, 57) + '…' : url;
+        drawQR(canvas, url);
+        overlay.classList.add('open');
+      }
+
+      document.getElementById('qrBtn').addEventListener('click', openQR);
+      document.getElementById('qr-close').addEventListener('click', function() {
+        overlay.classList.remove('open');
+      });
+      overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) overlay.classList.remove('open');
+      });
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') overlay.classList.remove('open');
+      });
+
+      /* ── Pure-JS QR generator (no CDN) ──────────────────────────
+         Implements QR Code version 1–10, byte mode, ECC level M.
+         Ported from a public-domain minimal QR implementation.     */
+      function drawQR(canvas, text) {
+        var qr = createQR(text, 'M');
+        if (!qr) { canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height); return; }
+        var mod = qr.size;
+        var scale = Math.floor(220 / mod);
+        var size  = mod * scale;
+        canvas.width  = size;
+        canvas.height = size;
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, size, size);
+        ctx.fillStyle = '#000';
+        for (var r = 0; r < mod; r++) {
+          for (var c = 0; c < mod; c++) {
+            if (qr.get(r, c)) ctx.fillRect(c * scale, r * scale, scale, scale);
+          }
+        }
+      }
+
+      /* ── Minimal QR encoder ────────────────────────────────────── */
+      function createQR(text, ecl) {
+        var ECL = { L:1, M:0, Q:3, H:2 };
+        var eclVal = ECL[ecl] || 0;
+
+        // Encode bytes
+        var bytes = [];
+        for (var i = 0; i < text.length; i++) {
+          var c = text.charCodeAt(i);
+          if (c < 0x80)       { bytes.push(c); }
+          else if (c < 0x800) { bytes.push(0xC0|(c>>6)); bytes.push(0x80|(c&63)); }
+          else                { bytes.push(0xE0|(c>>12)); bytes.push(0x80|((c>>6)&63)); bytes.push(0x80|(c&63)); }
+        }
+
+        // Version capacity table [version][ecl] = max bytes
+        var CAP = [
+          [],[17,14,11,7],[32,26,20,14],[53,42,32,24],[78,62,46,34],
+          [106,84,60,44],[134,106,74,58],[154,122,86,64],[192,152,108,84],
+          [230,180,130,98],[271,213,151,119]
+        ];
+        var ver = 0;
+        for (var v = 1; v <= 10; v++) {
+          if (CAP[v][eclVal] >= bytes.length) { ver = v; break; }
+        }
+        if (!ver) return null;
+
+        var size = ver * 4 + 17;
+        // grid: 0=white, 1=black, -1=function (treated as black for display)
+        var grid  = [];
+        var func_ = [];
+        for (var r2 = 0; r2 < size; r2++) { grid.push(new Array(size).fill(0)); func_.push(new Array(size).fill(false)); }
+
+        function setFn(r3, c3, v3) { grid[r3][c3] = v3 ? 1 : 0; func_[r3][c3] = true; }
+
+        // Finder pattern
+        function finder(rr, cc) {
+          for (var dr = -1; dr <= 7; dr++) for (var dc = -1; dc <= 7; dc++) {
+            if (rr+dr < 0||rr+dr>=size||cc+dc<0||cc+dc>=size) continue;
+            var inSq = (dr>=0&&dr<=6&&(dc===0||dc===6))||(dc>=0&&dc<=6&&(dr===0||dr===6))||(dr>=2&&dr<=4&&dc>=2&&dc<=4);
+            setFn(rr+dr, cc+dc, dr >= 0 && dr <= 6 && dc >= 0 && dc <= 6 && inSq);
+          }
+        }
+        finder(0,0); finder(0,size-7); finder(size-7,0);
+
+        // Timing
+        for (var t = 6; t < size-6; t++) { setFn(6,t,t%2===0); setFn(t,6,t%2===0); }
+
+        // Dark module
+        setFn(size-8,8,true);
+
+        // Alignment (ver >= 2)
+        var ALIGN = [[],[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,28,46],[6,32,50]];
+        if (ver >= 2) {
+          var ap = ALIGN[ver];
+          for (var ai = 0; ai < ap.length; ai++) for (var aj = 0; aj < ap.length; aj++) {
+            var ar = ap[ai], ac2 = ap[aj];
+            if (func_[ar][ac2]) continue;
+            for (var dr2=-2;dr2<=2;dr2++) for (var dc2=-2;dc2<=2;dc2++)
+              setFn(ar+dr2, ac2+dc2, Math.max(Math.abs(dr2),Math.abs(dc2))!==1);
+          }
+        }
+
+        // Format info placeholder (will be filled after masking)
+        var FMT_COORDS = [];
+        for (var fi = 0; fi <= 5; fi++) { FMT_COORDS.push([8,fi],[fi,8]); }
+        FMT_COORDS.push([8,7],[7,8],[8,8]);
+        for (var fi2 = 8; fi2 < 15; fi2++) { FMT_COORDS.push([fi2+size-15,8],[8,size-fi2+7]); }
+        FMT_COORDS.forEach(function(xy){ func_[xy[0]][xy[1]] = true; });
+
+        // Version info placeholder (ver >= 7)
+        if (ver >= 7) {
+          for (var vi = 0; vi < 18; vi++) {
+            func_[Math.floor(vi/3)][size-11+vi%3] = true;
+            func_[size-11+vi%3][Math.floor(vi/3)] = true;
+          }
+        }
+
+        // Data bits
+        var dataBits = [];
+        // Mode indicator: 4 bits = 0100 (byte)
+        dataBits.push(0,1,0,0);
+        // Character count: 8 bits
+        var len = bytes.length;
+        for (var bi = 7; bi >= 0; bi--) dataBits.push((len>>bi)&1);
+        // Data
+        bytes.forEach(function(b) { for (var bi2=7;bi2>=0;bi2--) dataBits.push((b>>bi2)&1); });
+        // Terminator
+        for (var ti=0;ti<4&&dataBits.length<CAP[ver][eclVal]*8;ti++) dataBits.push(0);
+        // Byte-align
+        while (dataBits.length%8!==0) dataBits.push(0);
+        // Pad bytes
+        var PAD=[0xEC,0x11]; var pi=0;
+        while (dataBits.length < CAP[ver][eclVal]*8) { var pb=PAD[pi%2]; for(var pbi=7;pbi>=0;pbi--) dataBits.push((pb>>pbi)&1); pi++; }
+
+        // ECC (Reed-Solomon)
+        var EC_CODEWORDS = [[],[10,7,17,13],[16,10,28,22],[26,15,22,18],[18,20,16,26],[24,26,22,18],[16,18,28,24],[18,20,22,30],[22,24,26,20],[22,30,24,24],[26,18,28,28]];
+        var ecLen = EC_CODEWORDS[ver][eclVal];
+        var dataBytes = [];
+        for (var di=0;di<dataBits.length;di+=8) {
+          var b2=0; for(var dj=0;dj<8;dj++) b2=(b2<<1)|dataBits[di+dj]; dataBytes.push(b2);
+        }
+
+        // GF(256) helpers
+        var EXP=[]; var LOG=[]; var x2=1;
+        for (var gi=0;gi<256;gi++) { EXP.push(x2); if(gi<255) LOG[x2]=gi; x2=(x2*2)^(x2>=128?0x11d:0); }
+        function gmul(a,b) { return a===0||b===0?0:EXP[(LOG[a]+LOG[b])%255]; }
+
+        // Generator poly
+        function genPoly(n) {
+          var p=[1];
+          for (var gi2=0;gi2<n;gi2++) {
+            var q=[1,EXP[gi2]];
+            var r=new Array(p.length+1).fill(0);
+            for (var i2=0;i2<p.length;i2++) for (var j2=0;j2<q.length;j2++) r[i2+j2]^=gmul(p[i2],q[j2]);
+            p=r;
+          }
+          return p;
+        }
+        var gen = genPoly(ecLen);
+
+        // Divide
+        var msg = dataBytes.slice();
+        for (var ei=0;ei<dataBytes.length;ei++) {
+          var coef=msg[ei];
+          if (coef!==0) for (var ej=1;ej<gen.length;ej++) msg[ei+ej]^=gmul(gen[ej],coef);
+        }
+        var ecBytes = msg.slice(dataBytes.length);
+
+        // All codewords
+        var allBytes = dataBytes.concat(ecBytes);
+        var allBits = [];
+        allBytes.forEach(function(b3){ for(var bi3=7;bi3>=0;bi3--) allBits.push((b3>>bi3)&1); });
+        // Remainder bits
+        var REM=[0,0,7,7,7,7,7,0,0,0,0,0,0,0];
+        for(var ri=0;ri<REM[ver];ri++) allBits.push(0);
+
+        // Place data (zigzag)
+        var bi4=0;
+        var right = size-1;
+        var goUp = true;
+        while (right >= 1) {
+          if (right === 6) right--;
+          for (var rr2 = (goUp?size-1:0); goUp?(rr2>=0):(rr2<size); rr2+=(goUp?-1:1)) {
+            for (var cc2=0;cc2<2;cc2++) {
+              var col=right-cc2;
+              if (!func_[rr2][col]) { grid[rr2][col]=bi4<allBits.length?allBits[bi4]:0; bi4++; }
+            }
+          }
+          goUp=!goUp; right-=2;
+        }
+
+        // Masking — use pattern 0 (checkerboard)
+        var MASK = 0;
+        for (var mr=0;mr<size;mr++) for (var mc=0;mc<size;mc++) {
+          if (!func_[mr][mc] && ((mr+mc)%2===0)) grid[mr][mc]^=1;
+        }
+
+        // Format info
+        var FMT_EC = [[1,0],[0,0],[3,0],[2,0]]; // [ecl][mask]
+        var fmtData = (FMT_EC[eclVal][0]<<3)|MASK;
+        var fmtPoly = fmtData<<10;
+        for (var fp=14;fp>=10;fp--) if (fmtPoly&(1<<fp)) fmtPoly^=(0x537<<(fp-10));
+        var fmtFull = ((fmtData<<10)|fmtPoly)^0x5412;
+        var FMT_C = [[8,0],[8,1],[8,2],[8,3],[8,4],[8,5],[8,7],[8,8],[7,8],[5,8],[4,8],[3,8],[2,8],[1,8],[0,8]];
+        for (var fc=0;fc<15;fc++) {
+          var bit=(fmtFull>>(14-fc))&1;
+          grid[FMT_C[fc][0]][FMT_C[fc][1]]=bit;
+          grid[size-1-([6,7,8,7,6,5,4,3,2,1,0,0,0,0,0][fc])][8+(fc<7?0:fc-6-1)];
+          // second copy
+          if (fc<7) grid[size-1-fc][8]=bit; else grid[8][size-15+fc]=bit;
+        }
+
+        return { size:size, get:function(r,c){ return grid[r][c]===1; } };
+      }
+    })();
+
+    // ── FAQ Chatbot (live-data aware) ─────────────────────────────
+    (function() {
+      // Dynamic FAQ: answers are functions so they always read live _state
+      var FAQ_DEF = [
+        { q: 'How many students are enrolled?',
+          a: function() { var s=_state.students; var n=parseInt(s.value)||0; var pct=Math.round(n/(s.capacity||400)*100); return 'There are currently '+n+' students enrolled ('+pct+'% of the '+s.capacity+'-seat capacity).'; } },
+        { q: 'What is the total workshop capacity?',
+          a: function() { var tot=_state.workshops.reduce(function(a,w){return a+w.capacity;},0); return 'Total capacity across all '+_state.workshops.length+' workshops is '+tot+' seats.'; } },
+        { q: 'How many workshops are operational?',
+          a: function() { var open=_state.workshops.filter(function(w){return w.status==='open';}).length; var full=_state.workshops.filter(function(w){return w.status==='full';}).length; var maint=_state.workshops.filter(function(w){return w.status==='soon';}).length; return open+' of '+_state.workshops.length+' workshops are operational. '+full+' full, '+maint+' under maintenance.'; } },
+        { q: 'Which workshop is under maintenance?',
+          a: function() { var ws=_state.workshops.filter(function(w){return w.status==='soon';}); return ws.length ? ws.map(function(w){return w.name;}).join(', ')+' is/are under maintenance.' : 'No workshops are currently under maintenance.'; } },
+        { q: 'Which workshop is full?',
+          a: function() { var ws=_state.workshops.filter(function(w){return w.status==='full';}); return ws.length ? ws.map(function(w){return w.name+' ('+w.enrolled+'/'+w.capacity+')';}).join(', ')+' is/are full.' : 'No workshops are currently full.'; } },
+        { q: 'What is the competency pass rate?',             a: function(){ return 'The competency pass rate is 82%, up 4 pts vs last term (above the 80% benchmark).'; } },
+        { q: 'What is trainer utilisation?',                  a: function(){ return 'Trainer utilisation is at 76% — below the 80% KPI target. A timetable review is recommended.'; } },
+        { q: 'How many tasks are active?',
+          a: function() { var t=_state.tasks; var tot=parseInt(t.value)||0; var done=Math.min(t.completed,tot); var pct=tot?Math.round(done/tot*100):0; return 'There are '+tot+' active assignments. '+done+' completed ('+pct+'%).'; } },
+        { q: 'What is the net financial surplus?',            a: function(){ return 'The net surplus is RM 219,000 with a return ratio of 1.55×. Cost per student: RM 1,323.'; } },
+        { q: 'What is the training grant amount?',            a: function(){ return 'The JPK training grant is RM 420,000 for this academic year.'; } },
+        { q: 'What is the industry contribution?',            a: function(){ return 'Industry partners contributed RM 85,000 — up 18% year-on-year.'; } },
+        { q: 'What are operating costs?',                     a: function(){ return 'Total operating costs are RM 398,000 and maintenance costs are RM 62,000.'; } },
+        { q: 'What is the AI forecast for next semester?',
+          a: function() { var forecast=linRegForecast(HIST.enrolment.concat([parseInt(_state.students.value)||0])); return 'AI linear-regression forecast for next semester: '+forecast+' students — confidence: High.'; } },
+        { q: 'What programmes are offered?',
+          a: function() { return 'Programmes: '+_state.workshops.map(function(w){return w.name;}).join(', ')+'.'; } },
+        { q: 'What is the enrolment for Electrical?',
+          a: function() { var ws=_state.workshops.find(function(w){return w.name.indexOf('Electrical')>-1;}); return ws ? ws.name+': '+ws.enrolled+'/'+ws.capacity+' seats ('+Math.round(ws.enrolled/ws.capacity*100)+'% full).' : 'Workshop not found.'; } },
+        { q: 'What is the enrolment for Automotive?',
+          a: function() { var ws=_state.workshops.find(function(w){return w.name.indexOf('Automotive')>-1;}); return ws ? ws.name+': '+ws.enrolled+'/'+ws.capacity+' seats — status: '+statusLabel(ws.status)+'.' : 'Workshop not found.'; } },
+        { q: 'What is the enrolment for Welding?',
+          a: function() { var ws=_state.workshops.find(function(w){return w.name.indexOf('Welding')>-1;}); return ws ? ws.name+': '+ws.enrolled+'/'+ws.capacity+' seats.' : 'Workshop not found.'; } },
+        { q: 'What is the enrolment for Networking?',
+          a: function() { var ws=_state.workshops.find(function(w){return w.name.indexOf('Network')>-1;}); return ws ? ws.name+': '+ws.enrolled+'/'+ws.capacity+' seats.' : 'Workshop not found.'; } },
+        { q: 'What is the enrolment for Air-Cond?',
+          a: function() { var ws=_state.workshops.find(function(w){return w.name.indexOf('Air')>-1;}); return ws ? ws.name+': '+ws.enrolled+'/'+ws.capacity+' seats.' : 'Workshop not found.'; } },
+        { q: 'What are the strategic alerts?',                a: function(){ return 'Current alerts: (1) Trainer Gap in Plumbing, (2) Trainer utilisation at 76% vs 80% KPI, (3) 3 Industry MoUs expire Q1 2025.'; } },
+        { q: 'When do the industry MoUs expire?',             a: function(){ return '3 industry partnership MoUs expire in Q1 2025. Coordinate renewals with the Industry Liaison unit.'; } },
+        { q: 'How do I export the PDF report?',               a: function(){ return 'Click "Export Official PDF" in the header. The report pulls live data including current enrolment, workshops, checklist, and ROI.'; } },
+        { q: 'How do I share the dashboard?',                 a: function(){ return 'Click "Share QR" in the header. A QR code of the current URL appears for phone scanning.'; } },
+        { q: 'How do I reset the data?',                      a: function(){ return 'Click "Reset Demo Data" in the header and confirm. All values revert to defaults.'; } },
+        { q: 'Is data saved automatically?',                  a: function(){ return 'Yes. All edits are saved to localStorage instantly. A "Saved" toast confirms each change.'; } },
+        { q: 'How do I edit a card value?',                   a: function(){ return 'In Operations view, click any card number or subtitle to edit inline. Press Enter or click away to save.'; } },
+        { q: 'How do I change a workshop status?',            a: function(){ return 'In Operations view, click the status badge in the Workshop table to cycle: Open → Full → Maintenance → Open.'; } },
+        { q: 'What views are available?',                     a: function(){ return 'Two views: Pengarah/Executive (KPIs, AI narrative, forecast, ROI, anomaly) and Operations (editable cards, checklist, workshop table, ROI simulator).'; } },
+        { q: 'How does the checklist work?',                  a: function(){ var cl=buildClPredictor(_state); return 'Tick items to mark them done. Predictor status: '+cl.label+' — '+cl.text; } },
+        { q: 'What is the academic year shown?',              a: function(){ return 'The dashboard covers Academic Year 2024 / 2025, Semester 1.'; } }
+      ];
+      // Materialise FAQ so keyword matcher can use .a as a string
+      var FAQ = FAQ_DEF.map(function(f) { return { q: f.q, getA: f.a }; });
+
+      var fab     = document.getElementById('chat-fab');
+      var win     = document.getElementById('chat-window');
+      var msgs    = document.getElementById('chat-messages');
+      var sugg    = document.getElementById('chat-suggestions');
+      var input   = document.getElementById('chat-input');
+      var sendBtn = document.getElementById('chat-send-btn');
+      var badge   = document.getElementById('chat-badge');
+      var opened  = false;
+
+      // Show badge after 3s if not yet opened
+      setTimeout(function() { if (!opened) badge.style.display = 'flex'; }, 3000);
+
+      fab.addEventListener('click', function() {
+        opened = true;
+        badge.style.display = 'none';
+        win.classList.toggle('open');
+        if (win.classList.contains('open') && msgs.children.length === 0) {
+          addMsg('bot', 'Hi! I\'m the TVET Assistant. Ask me anything about this dashboard, or pick a quick question below.');
+          renderSuggestions(FAQ.slice(0, 5));
+        }
+        if (win.classList.contains('open')) input.focus();
+      });
+      document.getElementById('chat-close-btn').addEventListener('click', function() {
+        win.classList.remove('open');
+      });
+
+      function addMsg(who, text) {
+        var d = document.createElement('div');
+        d.className = 'chat-msg ' + who;
+        d.textContent = text;
+        msgs.appendChild(d);
+        msgs.scrollTop = msgs.scrollHeight;
+      }
+
+      function renderSuggestions(items) {
+        sugg.innerHTML = '';
+        items.forEach(function(item) {
+          var btn = document.createElement('button');
+          btn.className = 'chat-sugg';
+          btn.textContent = item.q;
+          btn.addEventListener('click', function() {
+            addMsg('user', item.q);
+            sugg.innerHTML = '';
+            setTimeout(function() {
+              addMsg('bot', item.getA());  // call live function
+              renderSuggestions(getRelated(item));
+            }, 320);
+          });
+          sugg.appendChild(btn);
+        });
+      }
+
+      function getRelated(item) {
+        var idx = FAQ.indexOf(item);
+        var result = [];
+        for (var i = 1; i <= FAQ.length && result.length < 4; i++) {
+          result.push(FAQ[(idx + i) % FAQ.length]);
+        }
+        return result;
+      }
+
+      function handleInput() {
+        var text = input.value.trim();
+        if (!text) return;
+        input.value = '';
+        addMsg('user', text);
+        sugg.innerHTML = '';
+        var lower = text.toLowerCase();
+        // Find best match by keyword scoring against question text
+        var best = null, bestScore = 0;
+        FAQ.forEach(function(item) {
+          var score = 0;
+          var words = lower.split(/\s+/);
+          words.forEach(function(w) {
+            if (w.length > 2 && item.q.toLowerCase().indexOf(w) !== -1) score += 2;
+            if (w.length > 2 && item.getA().toLowerCase().indexOf(w) !== -1) score += 1;
+          });
+          if (score > bestScore) { bestScore = score; best = item; }
+        });
+        setTimeout(function() {
+          if (best && bestScore > 0) {
+            addMsg('bot', best.getA());  // always reads live _state
+            renderSuggestions(getRelated(best));
+          } else {
+            addMsg('bot', 'I\'m not sure about that. Try one of these frequently asked questions:');
+            renderSuggestions(FAQ.slice(0, 4));
+          }
+        }, 350);
+      }
+
+      sendBtn.addEventListener('click', handleInput);
+      input.addEventListener('keydown', function(e) { if (e.key === 'Enter') handleInput(); });
+    })();
+  </script>
+
+</body>
+</html>
